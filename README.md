@@ -10,6 +10,8 @@
 
 [![GoDoc](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](https://pkg.go.dev/github.com/agentstation/utctime)
 [![Go Report Card](https://goreportcard.com/badge/github.com/agentstation/utctime?style=flat-square)](https://goreportcard.com/report/github.com/agentstation/utctime)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/agentstation/utctime/ci.yaml?style=flat-square)](https://github.com/agentstation/utctime/actions)
+[![codecov](https://codecov.io/gh/agentstation/utctime/graph/badge.svg?token=EOAZUVVH7H)](https://codecov.io/gh/agentstation/utctime)
 [![License](http://img.shields.io/badge/license-mit-blue.svg?style=flat-square)](https://raw.githubusercontent.com/agentstation/utctime/master/LICENSE)
 
 The `utctime` package provides an enhanced alias of Go's `time.Time` that ensures your times are consistently in UTC. It includes helpful additional methods for common time operations and formatting.
