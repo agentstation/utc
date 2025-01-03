@@ -10,7 +10,7 @@
 
 [![GoDoc](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](https://pkg.go.dev/github.com/agentstation/utc)
 [![Go Report Card](https://goreportcard.com/badge/github.com/agentstation/utc?style=flat-square)](https://goreportcard.com/report/github.com/agentstation/utc)
-[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/agentstation/utctiutcutcme/ci.yaml?style=flat-square)](https://github.com/agentstation/utc/actions)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/agentstation/utc/ci.yaml?style=flat-square)](https://github.com/agentstation/utc/actions)
 [![codecov](https://codecov.io/gh/agentstation/utc/graph/badge.svg?token=EOAZUVVH7H)](https://codecov.io/gh/agentstation/utc)
 [![License](http://img.shields.io/badge/license-mit-blue.svg?style=flat-square)](https://raw.githubusercontent.com/agentstation/utc/master/LICENSE)
 
