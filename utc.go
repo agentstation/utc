@@ -1,4 +1,4 @@
-package utctime
+package utc
 
 import (
 	"database/sql/driver"
@@ -95,7 +95,7 @@ func New(t time.Time) Time {
 	return Time{t.UTC()}
 }
 
-// ParseRFC3339 parses a time string in RFC3339 format and returns a utctime.Time
+// ParseRFC3339 parses a time string in RFC3339 format and returns a utc.Time
 func ParseRFC3339(s string) (Time, error) {
 	t, err := time.Parse(time.RFC3339, s)
 	if err != nil {
@@ -104,7 +104,7 @@ func ParseRFC3339(s string) (Time, error) {
 	return Time{t.UTC()}, nil
 }
 
-// Parse parses a time string in the specified format and returns a utctime.Time
+// Parse parses a time string in the specified format and returns a utc.Time
 func Parse(layout string, s string) (Time, error) {
 	t, err := time.Parse(layout, s)
 	if err != nil {
@@ -113,11 +113,11 @@ func Parse(layout string, s string) (Time, error) {
 	return Time{t.UTC()}, nil
 }
 
-// UnmarshalJSON implements the json.Unmarshaler interface for utctime.Time
+// UnmarshalJSON implements the json.Unmarshaler interface for utc.Time
 func (t *Time) UnmarshalJSON(data []byte) error {
 	// Handle empty data
 	if len(data) == 0 {
-		return errors.New("cannot unmarshal empty data into utctime.Time")
+		return errors.New("cannot unmarshal empty data into utc.Time")
 	}
 
 	// Handle null or empty string
@@ -142,28 +142,28 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// MarshalJSON implements the json.Marshaler interface for utctime.Time.
+// MarshalJSON implements the json.Marshaler interface for utc.Time.
 func (t Time) MarshalJSON() ([]byte, error) {
 	return []byte(`"` + t.Time.Format(time.RFC3339) + `"`), nil
 }
 
-// String implements the Stringer interface for utctime.Time. It prints the time in RFC3339 format.
+// String implements the Stringer interface for utc.Time. It prints the time in RFC3339 format.
 func (t Time) String() string {
 	return t.Time.Format(time.RFC3339)
 }
 
-// Value implements the driver.Valuer interface for database operations for utctime.Time.
+// Value implements the driver.Valuer interface for database operations for utc.Time.
 // It returns the time.Time value and assumes the time is already in UTC.
 func (t Time) Value() (driver.Value, error) {
 	return t.Time, nil
 }
 
-// Scan implements the sql.Scanner interface for database operations for utctime.Time
+// Scan implements the sql.Scanner interface for database operations for utc.Time
 // It does this by scanning the value into a time.Time, converting the time.Time to UTC,
-// and then assigning the UTC time to the utctime.Time.
+// and then assigning the UTC time to the utc.Time.
 func (t *Time) Scan(value interface{}) error {
 	if value == nil {
-		return errors.New("cannot scan nil into utctime.Time")
+		return errors.New("cannot scan nil into utc.Time")
 	}
 
 	// Handle the value as a time.Time
@@ -179,7 +179,7 @@ func (t *Time) Scan(value interface{}) error {
 		t.Time = parsed.UTC()
 		return nil
 	default:
-		return errors.New("cannot scan non-time value into utctime.Time")
+		return errors.New("cannot scan non-time value into utc.Time")
 	}
 }
 

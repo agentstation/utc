@@ -1,3 +1,3 @@
-module github.com/agentstation/utctime
+module github.com/agentstation/utc
 
 go 1.22.5

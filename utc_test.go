@@ -1,4 +1,4 @@
-package utctime
+package utc
 
 import (
 	"encoding/json"
@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func TestUTCTime_UnmarshalJSON(t *testing.T) {
+func TestUTC_UnmarshalJSON(t *testing.T) {
 	tests := []struct {
 		name    string
 		input   string
@@ -83,7 +83,7 @@ func TestUTCTime_UnmarshalJSON(t *testing.T) {
 	}
 }
 
-func TestUTCTime_MarshalJSON(t *testing.T) {
+func TestUTC_MarshalJSON(t *testing.T) {
 	tests := []struct {
 		name    string
 		time    time.Time
@@ -121,7 +121,7 @@ func TestUTCTime_MarshalJSON(t *testing.T) {
 	}
 }
 
-func TestUTCTime_RoundTrip(t *testing.T) {
+func TestUTC_RoundTrip(t *testing.T) {
 	type TestStruct struct {
 		Timestamp Time `json:"timestamp"`
 	}
@@ -150,7 +150,7 @@ func TestUTCTime_RoundTrip(t *testing.T) {
 	}
 }
 
-func TestUTCTime_UTCTimeNow(t *testing.T) {
+func TestUTC_Now(t *testing.T) {
 	now := Now()
 	time.Sleep(time.Millisecond)
 	later := Now()
@@ -164,7 +164,7 @@ func TestUTCTime_UTCTimeNow(t *testing.T) {
 	}
 }
 
-func TestUTCTime_ParseUTCTime(t *testing.T) {
+func TestUTC_Parse(t *testing.T) {
 	tests := []struct {
 		name    string
 		input   string
@@ -196,7 +196,7 @@ func TestUTCTime_ParseUTCTime(t *testing.T) {
 	}
 }
 
-func TestUTCTime_String(t *testing.T) {
+func TestUTC_String(t *testing.T) {
 	ut := Time{time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC)}
 	want := "2023-01-01T12:00:00Z"
 	if got := ut.String(); got != want {
@@ -204,7 +204,7 @@ func TestUTCTime_String(t *testing.T) {
 	}
 }
 
-func TestUTCTime_DatabaseOperations(t *testing.T) {
+func TestUTC_DatabaseOperations(t *testing.T) {
 	original := time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC)
 	ut := Time{original}
 
@@ -238,7 +238,7 @@ func TestUTCTime_DatabaseOperations(t *testing.T) {
 	}
 }
 
-func TestUTCTime_Comparisons(t *testing.T) {
+func TestUTC_Comparisons(t *testing.T) {
 	t1 := Time{time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC)}
 	t2 := Time{time.Date(2023, 1, 1, 13, 0, 0, 0, time.UTC)}
 
@@ -255,7 +255,7 @@ func TestUTCTime_Comparisons(t *testing.T) {
 	}
 }
 
-func TestUTCTime_Arithmetic(t *testing.T) {
+func TestUTC_Arithmetic(t *testing.T) {
 	t1 := Time{time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC)}
 	duration := time.Hour
 
@@ -271,7 +271,7 @@ func TestUTCTime_Arithmetic(t *testing.T) {
 	}
 }
 
-func TestUTCTime_IsZero(t *testing.T) {
+func TestUTC_IsZero(t *testing.T) {
 	var zero Time
 	if !zero.IsZero() {
 		t.Error("IsZero() should be true for zero value")
@@ -283,7 +283,7 @@ func TestUTCTime_IsZero(t *testing.T) {
 	}
 }
 
-func TestUTCTime_UnixTimestamps(t *testing.T) {
+func TestUTC_UnixTimestamps(t *testing.T) {
 	ut := Time{time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC)}
 
 	// Test Unix
@@ -297,7 +297,7 @@ func TestUTCTime_UnixTimestamps(t *testing.T) {
 	}
 }
 
-func TestNewUTCTime(t *testing.T) {
+func TestUTC_New(t *testing.T) {
 	tests := []struct {
 		name string
 		time time.Time
@@ -319,16 +319,16 @@ func TestNewUTCTime(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := New(tt.time)
 			if !got.UTC().Equal(tt.want) {
-				t.Errorf("NewUTCTime() = %v, want %v", got.UTC(), tt.want)
+				t.Errorf("New() = %v, want %v", got.UTC(), tt.want)
 			}
 			if got.UTC().Location() != time.UTC {
-				t.Error("NewUTCTime() time is not in UTC")
+				t.Error("New() time is not in UTC")
 			}
 		})
 	}
 }
 
-func TestUTCTime_TimeZoneConversions(t *testing.T) {
+func TestUTC_TimeZoneConversions(t *testing.T) {
 	// Use a fixed time that won't be affected by DST
 	ut := Time{time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)} // Noon UTC
 
@@ -369,7 +369,7 @@ func TestUTCTime_TimeZoneConversions(t *testing.T) {
 	}
 }
 
-func TestUTCTime_Formatting(t *testing.T) {
+func TestUTC_Formatting(t *testing.T) {
 	ut := Time{time.Date(2024, 1, 2, 15, 4, 5, 0, time.UTC)}
 
 	tests := []struct {
@@ -419,7 +419,7 @@ func TestUTCTime_Formatting(t *testing.T) {
 	}
 }
 
-func TestUTCTime_TimezoneError(t *testing.T) {
+func TestUTC_TimezoneError(t *testing.T) {
 	// Save original locationErr and restore it after test
 	originalErr := locationError
 	defer func() { locationError = originalErr }()
