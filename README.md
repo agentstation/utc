@@ -8,9 +8,9 @@
                          \___/  \__|\___|\__||_|_| |_| |_|\___|   
 ```
 
-[![GoDoc](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](https://pkg.go.dev/github.com/yourusername/utctime)
-[![Go Report Card](https://goreportcard.com/badge/github.com/yourusername/utctime?style=flat-square)](https://goreportcard.com/report/github.com/yourusername/utctime)
-[![License](http://img.shields.io/badge/license-mit-blue.svg?style=flat-square)](https://raw.githubusercontent.com/yourusername/utctime/master/LICENSE)
+[![GoDoc](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](https://pkg.go.dev/github.com/agentstation/utctime)
+[![Go Report Card](https://goreportcard.com/badge/github.com/agentstation/utctime?style=flat-square)](https://goreportcard.com/report/github.com/agentstation/utctime)
+[![License](http://img.shields.io/badge/license-mit-blue.svg?style=flat-square)](https://raw.githubusercontent.com/agentstation/utctime/master/LICENSE)
 
 The `utctime` package provides an enhanced alias of Go's `time.Time` that ensures your times are consistently in UTC. It includes helpful additional methods for common time operations and formatting.
 
@@ -33,7 +33,7 @@ The `utctime` package provides an enhanced alias of Go's `time.Time` that ensure
 To install the `utctime` package, use the following command:
 
 ```sh
-go get github.com/yourusername/utctime
+go get github.com/agentstation/utctime
 ```
 
 ## Usage
@@ -41,7 +41,7 @@ go get github.com/yourusername/utctime
 1. Import the package:
 
 ```go
-import "github.com/yourusername/utctime"
+import "github.com/agentstation/utctime"
 ```
 
 2. Create a new UTC time:
