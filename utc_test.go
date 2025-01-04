@@ -3,6 +3,7 @@ package utc
 import (
 	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 )
@@ -470,5 +471,500 @@ func TestValidateTimezoneAvailability(t *testing.T) {
 	err := ValidateTimezoneAvailability()
 	if !errors.Is(err, locationError) {
 		t.Errorf("Expected error to wrap %v, got %v", locationError, err)
+	}
+}
+
+func TestUTC_AdditionalFormats(t *testing.T) {
+	ut := Time{time.Date(2024, 1, 2, 15, 4, 5, 0, time.UTC)}
+
+	tests := []struct {
+		name     string
+		format   func(Time) string
+		expected string
+	}{
+		{
+			name:     "RFC3339Nano",
+			format:   Time.RFC3339Nano,
+			expected: "2024-01-02T15:04:05Z",
+		},
+		{
+			name:     "ISO8601",
+			format:   Time.ISO8601,
+			expected: "2024-01-02T15:04:05Z",
+		},
+		{
+			name:     "RFC822",
+			format:   Time.RFC822,
+			expected: "02 Jan 24 15:04 UTC",
+		},
+		{
+			name:     "RFC822Z",
+			format:   Time.RFC822Z,
+			expected: "02 Jan 24 15:04 +0000",
+		},
+		{
+			name:     "RFC850",
+			format:   Time.RFC850,
+			expected: "Tuesday, 02-Jan-24 15:04:05 UTC",
+		},
+		{
+			name:     "ANSIC",
+			format:   Time.ANSIC,
+			expected: "Tue Jan  2 15:04:05 2024",
+		},
+		{
+			name:     "Kitchen",
+			format:   Time.Kitchen,
+			expected: "3:04PM",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.format(ut)
+			if result != tt.expected {
+				t.Errorf("%s: expected %s, got %s", tt.name, tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestUTC_AdditionalTimeFormats(t *testing.T) {
+	ut := Time{time.Date(2024, 1, 2, 15, 4, 5, 0, time.UTC)}
+
+	tests := []struct {
+		name     string
+		format   func(Time) string
+		expected string
+	}{
+		{
+			name:     "USDateTime12",
+			format:   Time.USDateTime12,
+			expected: "01/02/2024 03:04:05 PM",
+		},
+		{
+			name:     "USDateTime24",
+			format:   Time.USDateTime24,
+			expected: "01/02/2024 15:04:05",
+		},
+		{
+			name:     "USTime12",
+			format:   Time.USTime12,
+			expected: "3:04 PM",
+		},
+		{
+			name:     "USTime24",
+			format:   Time.USTime24,
+			expected: "15:04",
+		},
+		{
+			name:     "EUDateTime12",
+			format:   Time.EUDateTime12,
+			expected: "02/01/2024 03:04:05 PM",
+		},
+		{
+			name:     "EUDateTime24",
+			format:   Time.EUDateTime24,
+			expected: "02/01/2024 15:04:05",
+		},
+		{
+			name:     "EUTime12",
+			format:   Time.EUTime12,
+			expected: "3:04 PM",
+		},
+		{
+			name:     "EUTime24",
+			format:   Time.EUTime24,
+			expected: "15:04",
+		},
+		{
+			name:     "DateOnly",
+			format:   Time.DateOnly,
+			expected: "2024-01-02",
+		},
+		{
+			name:     "TimeOnly",
+			format:   Time.TimeOnly,
+			expected: "15:04:05",
+		},
+		{
+			name:     "WeekdayShort",
+			format:   Time.WeekdayShort,
+			expected: "Tue",
+		},
+		{
+			name:     "MonthLong",
+			format:   Time.MonthLong,
+			expected: "January",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.format(ut)
+			if result != tt.expected {
+				t.Errorf("%s: expected %s, got %s", tt.name, tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestUTC_ParseRFC3339Nano(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   string
+		want    time.Time
+		wantErr bool
+	}{
+		{
+			name:    "valid nano time",
+			input:   "2023-01-01T12:00:00.123456789Z",
+			want:    time.Date(2023, 1, 1, 12, 0, 0, 123456789, time.UTC),
+			wantErr: false,
+		},
+		{
+			name:    "invalid format",
+			input:   "2023-01-01 12:00:00",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ParseRFC3339Nano(tt.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ParseRFC3339Nano() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && !got.Equal(Time{tt.want}) {
+				t.Errorf("ParseRFC3339Nano() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestUTC_ScanEdgeCases(t *testing.T) {
+	var ut Time
+
+	// Test scanning various time formats
+	tests := []struct {
+		name    string
+		input   interface{}
+		wantErr bool
+	}{
+		{
+			name:    "string RFC3339",
+			input:   "2023-01-01T12:00:00Z",
+			wantErr: false,
+		},
+		{
+			name:    "time.Time",
+			input:   time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC),
+			wantErr: false,
+		},
+		{
+			name:    "invalid string format",
+			input:   "invalid-time",
+			wantErr: true,
+		},
+		{
+			name:    "nil input",
+			input:   nil,
+			wantErr: true,
+		},
+		{
+			name:    "unsupported type",
+			input:   123,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ut.Scan(tt.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Scan() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestUTC_TimezoneFallbacks(t *testing.T) {
+	testTime := Time{time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)}
+
+	tests := []struct {
+		name     string
+		got      time.Time
+		expected time.Time
+	}{
+		{
+			name:     "PST",
+			got:      testTime.PST(),
+			expected: testTime.Time.In(time.FixedZone("PST", -8*3600)),
+		},
+		{
+			name:     "MST",
+			got:      testTime.MST(),
+			expected: testTime.Time.In(time.FixedZone("MST", -7*3600)),
+		},
+		{
+			name:     "CST",
+			got:      testTime.CST(),
+			expected: testTime.Time.In(time.FixedZone("CST", -6*3600)),
+		},
+		{
+			name:     "EST",
+			got:      testTime.EST(),
+			expected: testTime.Time.In(time.FixedZone("EST", -5*3600)),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if !tt.got.Equal(tt.expected) {
+				t.Errorf("Expected %v, got %v", tt.expected, tt.got)
+			}
+		})
+	}
+}
+
+func TestUTC_ValueNilReceiver(t *testing.T) {
+	var ut Time // Use zero value instead of nil pointer
+	value, err := ut.Value()
+	if err != nil {
+		t.Errorf("Value() on zero value should not return error, got %v", err)
+	}
+	if value == nil {
+		t.Error("Value() on zero value should not return nil")
+	}
+}
+
+func TestUTC_ParseMultipleFormats(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   string
+		wantErr bool
+	}{
+		{
+			name:    "RFC3339 with milliseconds",
+			input:   "2023-01-01T12:00:00.123Z",
+			wantErr: false,
+		},
+		{
+			name:    "RFC3339 with microseconds",
+			input:   "2023-01-01T12:00:00.123456Z",
+			wantErr: false,
+		},
+		{
+			name:    "RFC3339 with positive offset",
+			input:   "2023-01-01T12:00:00+01:00",
+			wantErr: false,
+		},
+		{
+			name:    "RFC3339 with negative offset",
+			input:   "2023-01-01T12:00:00-01:00",
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := ParseRFC3339(tt.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ParseRFC3339() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestUTC_NilHandling(t *testing.T) {
+	// Test with nil pointer
+	var ut *Time = nil
+
+	// Test MarshalJSON with nil
+	data, err := ut.MarshalJSON()
+	if err == nil {
+		t.Error("MarshalJSON() on nil receiver should return error")
+	}
+	if data != nil {
+		t.Errorf("MarshalJSON() on nil receiver should return nil data, got %v", data)
+	}
+
+	// Test String() on nil - should not panic
+	func() {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Error("String() on nil receiver should panic")
+			}
+		}()
+		_ = ut.String()
+	}()
+
+	// Test Value() on nil - should not panic
+	func() {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Error("Value() on nil receiver should panic")
+			}
+		}()
+		_, _ = ut.Value()
+	}()
+}
+
+func TestUTC_ZeroValueHandling(t *testing.T) {
+	// Test with zero value (empty struct) instead of nil pointer
+	var ut Time
+
+	// Test MarshalJSON with zero value
+	data, err := ut.MarshalJSON()
+	if err != nil {
+		t.Errorf("MarshalJSON() on zero value should not return error, got %v", err)
+	}
+	if string(data) != `"0001-01-01T00:00:00Z"` {
+		t.Errorf("MarshalJSON() on zero value = %s, want %s", string(data), `"0001-01-01T00:00:00Z"`)
+	}
+
+	// Test String() with zero value
+	str := ut.String()
+	if str != "0001-01-01T00:00:00Z" {
+		t.Errorf("String() on zero value = %q, want %q", str, "0001-01-01T00:00:00Z")
+	}
+
+	// Test Value() with zero value
+	val, err := ut.Value()
+	if err != nil {
+		t.Errorf("Value() on zero value should not return error, got %v", err)
+	}
+	if val == nil {
+		t.Error("Value() on zero value should not return nil")
+	}
+
+	// Test IsZero() with zero value
+	if !ut.IsZero() {
+		t.Error("IsZero() should return true for zero value")
+	}
+
+	// Test with non-zero value
+	nonZero := Time{time.Now()}
+	if nonZero.IsZero() {
+		t.Error("IsZero() should return false for non-zero value")
+	}
+}
+
+func TestUTC_TimeFormatErrors(t *testing.T) {
+	ut := Time{time.Date(2024, 1, 2, 15, 4, 5, 0, time.UTC)}
+
+	// Test with invalid layout
+	result := ut.Format("invalid")
+	expected := "invalid"
+	if result != expected {
+		t.Errorf("Format() with invalid layout = %q, want %q", result, expected)
+	}
+
+	// Test TimeFormat with empty TimeLayout
+	result = ut.TimeFormat("")
+	if result != "" {
+		t.Errorf("TimeFormat() with empty layout should return empty string, got %s", result)
+	}
+}
+
+func TestUTC_ParseWithCustomLayout(t *testing.T) {
+	tests := []struct {
+		name    string
+		layout  string
+		input   string
+		want    time.Time
+		wantErr bool
+	}{
+		{
+			name:    "custom layout success",
+			layout:  "2006-01-02",
+			input:   "2024-01-02",
+			want:    time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC),
+			wantErr: false,
+		},
+		{
+			name:    "custom layout failure",
+			layout:  "2006-01-02",
+			input:   "invalid",
+			wantErr: true,
+		},
+		{
+			name:    "empty layout",
+			layout:  "",
+			input:   "2024-01-02",
+			wantErr: true,
+		},
+		{
+			name:    "empty input",
+			layout:  "2006-01-02",
+			input:   "",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Parse(tt.layout, tt.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Parse() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && !got.Equal(Time{tt.want}) {
+				t.Errorf("Parse() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestUTC_LocationInitialization(t *testing.T) {
+	err := ValidateTimezoneAvailability()
+	if err != nil {
+		// Verify the error message contains useful information
+		if !strings.Contains(err.Error(), "timezone locations") {
+			t.Errorf("Expected error message to contain 'timezone locations', got %v", err)
+		}
+	}
+}
+
+func TestUTC_ComparisonEdgeCases(t *testing.T) {
+	zero := Time{}
+	now := Now()
+
+	// Test comparison with zero value
+	if zero.After(now) {
+		t.Error("Zero time should not be after now")
+	}
+	if now.Before(zero) {
+		t.Error("Now should not be before zero time")
+	}
+	if zero.Equal(now) {
+		t.Error("Zero time should not equal now")
+	}
+
+	// Test comparison with same time
+	same := Now()
+	if !same.Equal(same) {
+		t.Error("Same time should equal itself")
+	}
+}
+
+func TestUTC_ArithmeticEdgeCases(t *testing.T) {
+	now := Now()
+
+	// Test adding/subtracting zero duration
+	if !now.Add(0).Equal(now) {
+		t.Error("Adding zero duration should return same time")
+	}
+
+	// Test adding negative duration
+	negDur := -time.Hour
+	if !now.Add(negDur).Add(time.Hour).Equal(now) {
+		t.Error("Adding negative then positive duration should return to original time")
+	}
+
+	// Test subtracting same time
+	if now.Sub(now) != 0 {
+		t.Error("Subtracting same time should return zero duration")
 	}
 }

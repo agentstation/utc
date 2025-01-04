@@ -104,6 +104,15 @@ func ParseRFC3339(s string) (Time, error) {
 	return Time{t.UTC()}, nil
 }
 
+// ParseRFC3339Nano parses a time string in RFC3339Nano format and returns a utc.Time
+func ParseRFC3339Nano(s string) (Time, error) {
+	t, err := time.Parse(time.RFC3339Nano, s)
+	if err != nil {
+		return Time{}, err
+	}
+	return Time{t.UTC()}, nil
+}
+
 // Parse parses a time string in the specified format and returns a utc.Time
 func Parse(layout string, s string) (Time, error) {
 	t, err := time.Parse(layout, s)
@@ -143,18 +152,27 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 }
 
 // MarshalJSON implements the json.Marshaler interface for utc.Time.
-func (t Time) MarshalJSON() ([]byte, error) {
+func (t *Time) MarshalJSON() ([]byte, error) {
+	if t == nil {
+		return nil, errors.New("cannot marshal nil utc.Time")
+	}
 	return []byte(`"` + t.Time.Format(time.RFC3339) + `"`), nil
 }
 
 // String implements the Stringer interface for utc.Time. It prints the time in RFC3339 format.
-func (t Time) String() string {
+func (t *Time) String() string {
+	if t == nil {
+		panic("cannot call String() on nil utc.Time")
+	}
 	return t.Time.Format(time.RFC3339)
 }
 
 // Value implements the driver.Valuer interface for database operations for utc.Time.
 // It returns the time.Time value and assumes the time is already in UTC.
-func (t Time) Value() (driver.Value, error) {
+func (t *Time) Value() (driver.Value, error) {
+	if t == nil {
+		panic("cannot call Value() on nil utc.Time")
+	}
 	return t.Time, nil
 }
 
