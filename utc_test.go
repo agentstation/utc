@@ -968,3 +968,13 @@ func TestUTC_ArithmeticEdgeCases(t *testing.T) {
 		t.Error("Subtracting same time should return zero duration")
 	}
 }
+
+func TestUTC_RFC3339(t *testing.T) {
+	ut := Time{time.Date(2024, 1, 2, 15, 4, 5, 0, time.UTC)}
+	expected := "2024-01-02T15:04:05Z"
+
+	result := ut.RFC3339()
+	if result != expected {
+		t.Errorf("RFC3339() = %q, want %q", result, expected)
+	}
+}
