@@ -1,9 +1,30 @@
+// Package utc provides a time.Time wrapper that ensures all times are in UTC.
+//
+// The package offers enhanced safety by gracefully handling nil receivers instead
+// of panicking, making it more suitable for production environments. When compiled
+// with the debug build tag (-tags debug), it provides additional logging for nil
+// receiver method calls to help identify potential bugs during development.
+//
+// Key features:
+//   - All times are automatically converted to and stored in UTC
+//   - JSON marshaling/unmarshaling with flexible parsing
+//   - SQL database compatibility
+//   - Timezone conversion helpers with automatic DST handling
+//   - Extensive formatting options for US and EU date formats
+//   - Nil-safe operations that return errors instead of panicking
+//
+// Debug mode:
+//
+//	To enable debug logging, compile with: go build -tags debug
+//	This will log warnings when methods are called on nil receivers.
 package utc
 
 import (
 	"database/sql/driver"
+	"encoding"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 )
 
@@ -41,34 +62,43 @@ var (
 	mountainLocation *time.Location
 
 	// Initialize locations
-	locationError = initializeLocations()
+	locationError = initLocations()
 )
 
-// initializeLocations loads all time zone locations at startup
-func initializeLocations() error {
-	var err error
+// initLocations loads all time zone locations at startup
+// Use lazy initialization to avoid upfront tz loading cost, while preserving
+// compatibility via locationError observation.
+var tzOnce sync.Once
+var tzInitErr error
 
-	pacificLocation, err = time.LoadLocation("America/Los_Angeles")
-	if err != nil {
-		return fmt.Errorf("failed to load Pacific timezone: %w", err)
-	}
+func initLocations() error {
+	tzOnce.Do(func() {
+		var err error
+		pacificLocation, err = time.LoadLocation("America/Los_Angeles")
+		if err != nil {
+			tzInitErr = fmt.Errorf("failed to load Pacific timezone: %w", err)
+			return
+		}
 
-	easternLocation, err = time.LoadLocation("America/New_York")
-	if err != nil {
-		return fmt.Errorf("failed to load Eastern timezone: %w", err)
-	}
+		easternLocation, err = time.LoadLocation("America/New_York")
+		if err != nil {
+			tzInitErr = fmt.Errorf("failed to load Eastern timezone: %w", err)
+			return
+		}
 
-	centralLocation, err = time.LoadLocation("America/Chicago")
-	if err != nil {
-		return fmt.Errorf("failed to load Central timezone: %w", err)
-	}
+		centralLocation, err = time.LoadLocation("America/Chicago")
+		if err != nil {
+			tzInitErr = fmt.Errorf("failed to load Central timezone: %w", err)
+			return
+		}
 
-	mountainLocation, err = time.LoadLocation("America/Denver")
-	if err != nil {
-		return fmt.Errorf("failed to load Mountain timezone: %w", err)
-	}
-
-	return nil
+		mountainLocation, err = time.LoadLocation("America/Denver")
+		if err != nil {
+			tzInitErr = fmt.Errorf("failed to load Mountain timezone: %w", err)
+			return
+		}
+	})
+	return tzInitErr
 }
 
 // ValidateTimezoneAvailability checks if all timezone locations were properly initialized
@@ -140,8 +170,8 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 		data = data[1 : len(data)-1]
 	}
 
-	// Parse the time
-	parsedTime, err := time.Parse(time.RFC3339, string(data))
+	// Parse the time (allow a few flexible formats)
+	parsedTime, err := parse(string(data))
 	if err != nil {
 		return err
 	}
@@ -152,49 +182,92 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 }
 
 // MarshalJSON implements the json.Marshaler interface for utc.Time.
+// Returns an error for nil receivers to maintain consistency with standard marshaling behavior.
 func (t *Time) MarshalJSON() ([]byte, error) {
 	if t == nil {
+		debugLog("MarshalJSON() called on nil *Time receiver")
 		return nil, errors.New("cannot marshal nil utc.Time")
 	}
 	return []byte(`"` + t.Time.Format(time.RFC3339) + `"`), nil
 }
 
+// Ensure Time implements encoding.TextMarshaler/TextUnmarshaler for broader codec support.
+var (
+	_ encoding.TextMarshaler   = Time{}
+	_ encoding.TextUnmarshaler = (*Time)(nil)
+)
+
+// MarshalText implements encoding.TextMarshaler.
+func (t Time) MarshalText() ([]byte, error) {
+	return []byte(t.Time.Format(time.RFC3339)), nil
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (t *Time) UnmarshalText(text []byte) error {
+	if len(text) == 0 {
+		t.Time = time.Time{}
+		return nil
+	}
+	parsed, err := parse(string(text))
+	if err != nil {
+		return err
+	}
+	t.Time = parsed
+	return nil
+}
+
 // String implements the Stringer interface for utc.Time. It prints the time in RFC3339 format.
+//
+// Unlike many Go types that panic on nil receivers, this method returns "<nil>" to match
+// stdlib conventions (e.g., bytes.Buffer) and improve production safety. In debug builds
+// (compiled with -tags debug), nil receivers are logged to help identify potential bugs.
 func (t *Time) String() string {
 	if t == nil {
-		panic("cannot call String() on nil utc.Time")
+		debugLog("String() called on nil *Time receiver")
+		return "<nil>"
 	}
 	return t.Time.Format(time.RFC3339)
 }
 
 // Value implements the driver.Valuer interface for database operations for utc.Time.
 // It returns the time.Time value and assumes the time is already in UTC.
+//
+// Returns an error if called on a nil receiver instead of panicking to allow graceful
+// error handling in database operations. In debug builds, nil receivers are logged.
 func (t *Time) Value() (driver.Value, error) {
 	if t == nil {
-		panic("cannot call Value() on nil utc.Time")
+		debugLog("Value() called on nil *Time receiver")
+		return nil, errors.New("cannot call Value() on nil utc.Time")
 	}
+	// Preserve previous behavior: zero value still returns a non-nil time
 	return t.Time, nil
 }
 
 // Scan implements the sql.Scanner interface for database operations for utc.Time
 // It does this by scanning the value into a time.Time, converting the time.Time to UTC,
 // and then assigning the UTC time to the utc.Time.
-func (t *Time) Scan(value interface{}) error {
+func (t *Time) Scan(value any) error {
 	if value == nil {
 		return errors.New("cannot scan nil into utc.Time")
 	}
 
-	// Handle the value as a time.Time
 	switch v := value.(type) {
 	case time.Time:
 		t.Time = v.UTC()
 		return nil
 	case string:
-		parsed, err := time.Parse(time.RFC3339, v)
+		parsed, err := parse(v)
 		if err != nil {
 			return err
 		}
-		t.Time = parsed.UTC()
+		t.Time = parsed
+		return nil
+	case []byte:
+		parsed, err := parse(string(v))
+		if err != nil {
+			return err
+		}
+		t.Time = parsed
 		return nil
 	default:
 		return errors.New("cannot scan non-time value into utc.Time")
@@ -438,4 +511,57 @@ func (t Time) TimeOnly() string {
 // Kitchen formats time as "3:04PM"
 func (t Time) Kitchen() string {
 	return t.Time.Format(time.Kitchen)
+}
+
+// Generic location helpers and utilities
+
+// In converts time to a named location (e.g., "America/Los_Angeles").
+func (t Time) In(name string) (time.Time, error) {
+	loc, err := time.LoadLocation(name)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return t.Time.In(loc), nil
+}
+
+// InLocation converts time to a provided *time.Location.
+func (t Time) InLocation(loc *time.Location) time.Time {
+	return t.Time.In(loc)
+}
+
+// Unix helpers
+func FromUnix(sec int64) Time     { return Time{time.Unix(sec, 0).UTC()} }
+func FromUnixMilli(ms int64) Time { return Time{time.Unix(0, ms*int64(time.Millisecond)).UTC()} }
+func (t Time) Unix() int64        { return t.Time.Unix() }
+func (t Time) UnixMilli() int64   { return t.Time.UnixMilli() }
+
+// Day helpers - times are always in UTC within this package
+func (t Time) StartOfDay() Time {
+	y, m, d := t.Time.UTC().Date()
+	return Time{time.Date(y, m, d, 0, 0, 0, 0, time.UTC)}
+}
+
+func (t Time) EndOfDay() Time {
+	y, m, d := t.Time.UTC().Date()
+	// One nanosecond before next midnight
+	return Time{time.Date(y, m, d+1, 0, 0, 0, -1, time.UTC)}
+}
+
+// Internal: parse a variety of common layouts to UTC.
+func parse(s string) (time.Time, error) {
+	tryLayouts := []string{
+		time.RFC3339Nano,
+		time.RFC3339,
+		"2006-01-02 15:04:05",
+		"2006-01-02",
+	}
+	var firstErr error
+	for _, layout := range tryLayouts {
+		if parsed, err := time.Parse(layout, s); err == nil {
+			return parsed.UTC(), nil
+		} else if firstErr == nil {
+			firstErr = err
+		}
+	}
+	return time.Time{}, firstErr
 }

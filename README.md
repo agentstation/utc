@@ -19,8 +19,8 @@ The `utc` package provides an enhanced alias of Go's `time.Time` that ensures yo
 ## Features
 
 - Guaranteed UTC time handling
-- JSON marshaling/unmarshaling support
-- SQL database compatibility
+- JSON marshaling/unmarshaling support with flexible parsing
+- SQL database compatibility with enhanced type support
 - Automatic timezone handling (PST/PDT, EST/EDT, etc.)
 - Extensive formatting options:
   - US date formats (MM/DD/YYYY)
@@ -29,6 +29,10 @@ The `utc` package provides an enhanced alias of Go's `time.Time` that ensures yo
   - Common components (weekday, month, etc.)
 - Timezone conversion methods with fallback support
 - Full compatibility with Go's standard `time.Time` methods
+- Nil-safe operations that return errors instead of panicking
+- Debug mode with detailed logging for development
+- Text encoding support for broader codec compatibility
+- Unix timestamp helpers and day boundary utilities
 
 ## Installation
 
@@ -37,6 +41,8 @@ To install the `utc` package, use the following command:
 ```sh
 go get github.com/agentstation/utc
 ```
+
+**Requirements**: Go 1.18 or later (uses `any` type and other modern Go features)
 
 ## Usage
 
@@ -107,6 +113,45 @@ type Record struct {
     CreatedAt utc.Time `db:"created_at"`
     UpdatedAt utc.Time `db:"updated_at"`
 }
+```
+
+## Debug Mode
+
+The package includes a debug mode that helps identify potential bugs during development:
+
+```sh
+# Build with debug mode enabled
+go build -tags debug
+
+# Run tests with debug mode
+go test -tags debug ./...
+```
+
+When debug mode is enabled, the package logs warnings when methods are called on nil receivers:
+
+```
+[UTC DEBUG] 2024/01/02 15:04:05 debug.go:26: String() called on nil *Time receiver
+[UTC DEBUG] 2024/01/02 15:04:05 debug.go:26: Value() called on nil *Time receiver
+```
+
+## Additional Utilities
+
+The package includes several convenience methods:
+
+```go
+// Unix timestamp conversions
+t1 := utc.FromUnix(1704199445)           // From Unix seconds
+t2 := utc.FromUnixMilli(1704199445000)   // From Unix milliseconds
+seconds := t.Unix()                       // To Unix seconds
+millis := t.UnixMilli()                   // To Unix milliseconds
+
+// Day boundaries
+start := t.StartOfDay()  // 2024-01-02 00:00:00.000000000 UTC
+end := t.EndOfDay()      // 2024-01-02 23:59:59.999999999 UTC
+
+// Generic timezone conversion
+eastern, err := t.In("America/New_York")
+tokyo, err := t.In("Asia/Tokyo")
 ```
 
 <!-- gomarkdoc:embed:start -->
