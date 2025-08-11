@@ -28,7 +28,7 @@ The `utc` package provides an enhanced, **zero-dependency** wrapper around Go's 
 - **Rich formatting options** - US/EU dates, RFC standards, custom layouts
 - **Automatic timezone handling** - PST/PDT, EST/EDT transitions
 - **Flexible parsing** - Handles multiple input formats automatically
-- **Serialization ready** - JSON, Database, Text encoding (YAML optional)
+- **Serialization ready** - JSON, YAML, Database, Text encoding
 
 ### **⚡ Performance & Compatibility**
 - **Zero dependencies** - No external packages required
@@ -46,8 +46,10 @@ go get github.com/agentstation/utc
 
 **Requirements**: Go 1.18 or later
 
-**Optional dependencies**:
-- For YAML support: `github.com/goccy/go-yaml` (add with `go get github.com/goccy/go-yaml`)
+**YAML Usage**: The package includes full YAML support. To use YAML functionality, install a YAML library:
+```bash
+go get github.com/goccy/go-yaml  # Recommended YAML library
+```
 
 ## Why Choose UTC? 🚀
 
@@ -70,11 +72,10 @@ go get github.com/agentstation/utc
 - **Intuitive API** - familiar time.Time wrapper with enhanced functionality  
 - **Rich formatting options** - US/EU date formats, RFC standards, custom layouts
 - **Automatic timezone handling** - PST/PDT, EST/EDT transitions handled correctly
-- **Serialization ready** - JSON, Database, Text encoding (YAML optional)
+- **Serialization ready** - JSON, YAML, Database, Text encoding
 
 ### ✅ **Optional Advanced Features**
-- **YAML support** - when you need it (testing-focused)
-- **Debug mode** - development-time nil pointer detection
+- **Debug mode** - development-time nil pointer detection  
 - **Flexible parsing** - handles multiple time formats automatically
 
 ## Quick Start
@@ -114,7 +115,7 @@ See the difference between `utc` and Go's standard `time` package:
 | **Rich Formatting** | ❌ Manual layout strings | ✅ **Built-in US/EU/ISO formats** |
 | **Timezone Conversion** | ❌ Manual location loading | ✅ **Auto PST/PDT, EST/EDT handling** |
 | **JSON Support** | ✅ Basic marshal/unmarshal | ✅ **Enhanced parsing & formatting** |
-| **YAML Support** | ❌ No built-in support | ✅ **Optional (with go-yaml)** |
+| **YAML Support** | ❌ No built-in support | ✅ **Full YAML marshal/unmarshal** |
 | **Text Encoding** | ❌ Limited support | ✅ **Full MarshalText/UnmarshalText** |
 | **Database Ready** | ✅ Basic support | ✅ **Enhanced Scan/Value methods** |
 | **Unix Timestamps** | ✅ Basic Unix() method | ✅ **Unix + UnixMilli helpers** |
@@ -203,7 +204,7 @@ type Event struct {
     EndTime   utc.Time `json:"end_time"`
 }
 
-// YAML marshaling (optional, requires go-yaml)
+// YAML marshaling (requires a YAML library like go-yaml)
 type Config struct {
     StartTime utc.Time `yaml:"start_time"`
     EndTime   utc.Time `yaml:"end_time"`
@@ -218,7 +219,7 @@ type Record struct {
 
 ## YAML Support
 
-The package includes YAML marshaling/unmarshaling methods (`MarshalYAML`/`UnmarshalYAML`) that implement the standard YAML interfaces. However, **YAML support is primarily used for testing** and requires an external dependency.
+The package includes full YAML marshaling/unmarshaling support through `MarshalYAML`/`UnmarshalYAML` methods that implement the standard YAML interfaces. Works with any Go YAML library that follows these interfaces.
 
 **Requirements for YAML testing**:
 - Go 1.21.0+ (required by go-yaml dependency)
@@ -314,7 +315,7 @@ Key features:
 
 - All times are automatically converted to and stored in UTC
 - JSON marshaling/unmarshaling with flexible parsing
-- Optional YAML marshaling/unmarshaling (with go-yaml dependency)
+- Full YAML marshaling/unmarshaling support
 - SQL database compatibility with enhanced type support
 - Timezone conversion helpers with automatic DST handling
 - Extensive formatting options for US and EU date formats
