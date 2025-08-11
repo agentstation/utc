@@ -42,7 +42,7 @@ To install the `utc` package, use the following command:
 go get github.com/agentstation/utc
 ```
 
-**Requirements**: Go 1.18 or later (uses `any` type and other modern Go features)
+**Requirements**: Go 1.21.0 or later (required by go-yaml dependency)
 
 ## Usage
 

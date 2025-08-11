@@ -216,6 +216,39 @@ func (t *Time) UnmarshalText(text []byte) error {
 	return nil
 }
 
+// UnmarshalYAML implements the yaml.Unmarshaler interface for utc.Time
+func (t *Time) UnmarshalYAML(unmarshal func(any) error) error {
+	var s string
+	if err := unmarshal(&s); err != nil {
+		return err
+	}
+
+	// Handle empty string
+	if s == "" {
+		t.Time = time.Time{}
+		return nil
+	}
+
+	// Parse the time string using our flexible parser
+	parsed, err := parse(s)
+	if err != nil {
+		return fmt.Errorf("failed to parse time %q: %w", s, err)
+	}
+
+	t.Time = parsed
+	return nil
+}
+
+// MarshalYAML implements the yaml.Marshaler interface for utc.Time
+func (t Time) MarshalYAML() (any, error) {
+	if t.Time.IsZero() {
+		return nil, nil
+	}
+
+	// Use RFC3339 format for YAML output
+	return t.Time.Format(time.RFC3339), nil
+}
+
 // String implements the Stringer interface for utc.Time. It prints the time in RFC3339 format.
 //
 // Unlike many Go types that panic on nil receivers, this method returns "<nil>" to match
@@ -554,6 +587,8 @@ func parse(s string) (time.Time, error) {
 		time.RFC3339,
 		"2006-01-02 15:04:05",
 		"2006-01-02",
+		"2006-01", // YYYY-MM format
+		"2006",    // YYYY format
 	}
 	var firstErr error
 	for _, layout := range tryLayouts {
