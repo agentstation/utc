@@ -42,7 +42,10 @@ To install the `utc` package, use the following command:
 go get github.com/agentstation/utc
 ```
 
-**Requirements**: Go 1.21.0 or later (required by go-yaml dependency)
+**Requirements**: Go 1.18 or later
+
+**Optional dependencies**:
+- For YAML support: `github.com/goccy/go-yaml` (add with `go get github.com/goccy/go-yaml`)
 
 ## Usage
 
@@ -113,6 +116,47 @@ type Record struct {
     CreatedAt utc.Time `db:"created_at"`
     UpdatedAt utc.Time `db:"updated_at"`
 }
+```
+
+## YAML Support
+
+The package includes YAML marshaling/unmarshaling methods (`MarshalYAML`/`UnmarshalYAML`) that implement the standard YAML interfaces. However, **YAML support is primarily used for testing** and requires an external dependency.
+
+**Requirements for YAML testing**:
+- Go 1.21.0+ (required by go-yaml dependency)
+- `github.com/goccy/go-yaml` package
+
+```sh
+# Install the YAML testing dependency
+go get github.com/goccy/go-yaml@v1.18.0
+
+# Run all tests including YAML functionality
+go test -tags yaml ./...
+
+# Run only YAML-specific tests
+go test -tags yaml -run YAML ./...
+```
+
+**Note**: The YAML marshal/unmarshal methods are available in the main package, but the actual YAML processing requires the go-yaml dependency. Most users won't need YAML functionality for production use.
+
+## Testing
+
+The project includes comprehensive Makefile targets for testing:
+
+```sh
+# Run core tests (Go 1.18+, no dependencies)
+make test
+
+# Run tests with YAML support (requires Go 1.21.0+)
+make test-yaml
+
+# Run all tests (core + YAML)
+make test-all
+
+# Generate coverage reports
+make coverage         # Core tests only
+make coverage-yaml    # Include YAML tests
+make coverage-all     # Both coverage reports
 ```
 
 ## Debug Mode

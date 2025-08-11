@@ -75,11 +75,31 @@ bench: ## Run Go benchmarks
 	go test ./... -tags=bench -bench=.
 
 .PHONY: test
-test: ## Run Go tests
+test: ## Run Go tests (without YAML)
 	@echo "Running go tests..."
-	go test ./... -tags=test
+	go test -v ./...
+
+.PHONY: test-yaml
+test-yaml: ## Run Go tests with YAML support (requires go-yaml dependency)
+	@echo "Installing YAML dependency for testing..."
+	@go get github.com/goccy/go-yaml@v1.18.0
+	@echo "Running go tests with YAML support..."
+	go test -v -tags=yaml ./...
+
+.PHONY: test-all
+test-all: test test-yaml ## Run all tests (with and without YAML)
 
 .PHONY: coverage
-coverage: ## Run tests and generate coverage report
+coverage: ## Run tests and generate coverage report (without YAML)
 	@echo "Running tests and generating coverage report..."
 	go test -race -coverprofile=coverage.txt -covermode=atomic ./...
+
+.PHONY: coverage-yaml
+coverage-yaml: ## Run tests and generate coverage report (with YAML)
+	@echo "Installing YAML dependency for testing..."
+	@go get github.com/goccy/go-yaml@v1.18.0
+	@echo "Running tests with YAML and generating coverage report..."
+	go test -race -tags=yaml -coverprofile=coverage-yaml.txt -covermode=atomic ./...
+
+.PHONY: coverage-all
+coverage-all: coverage coverage-yaml ## Generate coverage for all tests (with and without YAML)

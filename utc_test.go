@@ -6,8 +6,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-	
-	"github.com/goccy/go-yaml"
 )
 
 func TestUTC_UnmarshalJSON(t *testing.T) {
@@ -62,17 +60,14 @@ func TestUTC_UnmarshalJSON(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var ut Time
 			err := ut.UnmarshalJSON([]byte(tt.input))
-
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Time.UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-
 			if !tt.wantErr {
 				if !ut.Time.Equal(tt.want) {
 					t.Errorf("Time.UnmarshalJSON() = %v, want %v", ut.Time, tt.want)
@@ -85,7 +80,6 @@ func TestUTC_UnmarshalJSON(t *testing.T) {
 		})
 	}
 }
-
 func TestUTC_MarshalJSON(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -106,67 +100,55 @@ func TestUTC_MarshalJSON(t *testing.T) {
 			wantErr: false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ut := Time{tt.time.UTC()}
 			got, err := ut.MarshalJSON()
-
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Time.MarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-
 			if !tt.wantErr && string(got) != tt.want {
 				t.Errorf("Time.MarshalJSON() = %v, want %v", string(got), tt.want)
 			}
 		})
 	}
 }
-
 func TestUTC_RoundTrip(t *testing.T) {
 	type TestStruct struct {
 		Timestamp Time `json:"timestamp"`
 	}
-
 	original := TestStruct{
 		Timestamp: Time{time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC)},
 	}
-
 	// Marshal to JSON
 	data, err := json.Marshal(original)
 	if err != nil {
 		t.Fatalf("Failed to marshal: %v", err)
 	}
-
 	// Unmarshal back
 	var decoded TestStruct
 	err = json.Unmarshal(data, &decoded)
 	if err != nil {
 		t.Fatalf("Failed to unmarshal: %v", err)
 	}
-
 	// Compare
 	if !decoded.Timestamp.Time.Equal(original.Timestamp.Time) {
 		t.Errorf("Round trip failed: got %v, want %v",
 			decoded.Timestamp.Time, original.Timestamp.Time)
 	}
 }
-
 func TestUTC_Now(t *testing.T) {
 	now := Now()
 	time.Sleep(time.Millisecond)
 	later := Now()
-
 	if !now.Before(later) {
 		t.Error("Now() did not return increasing times")
 	}
-
 	if now.Time.Location() != time.UTC {
 		t.Error("Now() time is not in UTC")
 	}
 }
-
 func TestUTC_Parse(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -184,7 +166,6 @@ func TestUTC_Parse(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ut, err := ParseRFC3339(tt.input)
@@ -198,7 +179,6 @@ func TestUTC_Parse(t *testing.T) {
 		})
 	}
 }
-
 func TestUTC_String(t *testing.T) {
 	ut := Time{time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC)}
 	want := "2023-01-01T12:00:00Z"
@@ -206,100 +186,81 @@ func TestUTC_String(t *testing.T) {
 		t.Errorf("String() = %v, want %v", got, want)
 	}
 }
-
 func TestUTC_DatabaseOperations(t *testing.T) {
 	original := time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC)
 	ut := Time{original}
-
 	// Test Value
 	value, err := ut.Value()
 	if err != nil {
 		t.Fatalf("Value() error = %v", err)
 	}
-
 	// Test Scan
 	var scanned Time
 	err = scanned.Scan(value)
 	if err != nil {
 		t.Fatalf("Scan() error = %v", err)
 	}
-
 	if !scanned.Equal(ut) {
 		t.Errorf("Scan() = %v, want %v", scanned, ut)
 	}
-
 	// Test scanning nil
 	err = scanned.Scan(nil)
 	if err == nil {
 		t.Error("Scan(nil) should return error")
 	}
-
 	// Test scanning invalid type
 	err = scanned.Scan(42)
 	if err == nil {
 		t.Error("Scan(int) should return error")
 	}
 }
-
 func TestUTC_Comparisons(t *testing.T) {
 	t1 := Time{time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC)}
 	t2 := Time{time.Date(2023, 1, 1, 13, 0, 0, 0, time.UTC)}
-
 	if !t1.Before(t2) {
 		t.Error("Before() failed")
 	}
-
 	if !t2.After(t1) {
 		t.Error("After() failed")
 	}
-
 	if t1.Equal(t2) {
 		t.Error("Equal() failed")
 	}
 }
-
 func TestUTC_Arithmetic(t *testing.T) {
 	t1 := Time{time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC)}
 	duration := time.Hour
-
 	// Test Add
 	t2 := t1.Add(duration)
 	if !t2.Equal(Time{time.Date(2023, 1, 1, 13, 0, 0, 0, time.UTC)}) {
 		t.Error("Add() failed")
 	}
-
 	// Test Sub
 	if t2.Sub(t1) != duration {
 		t.Error("Sub() failed")
 	}
 }
-
 func TestUTC_IsZero(t *testing.T) {
 	var zero Time
 	if !zero.IsZero() {
 		t.Error("IsZero() should be true for zero value")
 	}
-
 	nonZero := Time{time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC)}
 	if nonZero.IsZero() {
 		t.Error("IsZero() should be false for non-zero value")
 	}
 }
-
 func TestUTC_UnixTimestamps(t *testing.T) {
 	ut := Time{time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC)}
-
 	// Test Unix
 	if ut.Unix() != ut.UTC().Unix() {
 		t.Error("Unix() returned incorrect value")
 	}
-
 	// Test UnixMilli
 	if ut.UnixMilli() != ut.UTC().UnixMilli() {
 		t.Error("UnixMilli() returned incorrect value")
 	}
 }
-
 func TestUTC_New(t *testing.T) {
 	tests := []struct {
 		name string
@@ -317,7 +278,6 @@ func TestUTC_New(t *testing.T) {
 			want: time.Date(2023, 1, 1, 17, 0, 0, 0, time.UTC), // Converted to UTC
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := New(tt.time)
@@ -330,11 +290,9 @@ func TestUTC_New(t *testing.T) {
 		})
 	}
 }
-
 func TestUTC_TimeZoneConversions(t *testing.T) {
 	// Use a fixed time that won't be affected by DST
 	ut := Time{time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)} // Noon UTC
-
 	tests := []struct {
 		name     string
 		convert  func(Time) time.Time
@@ -361,7 +319,6 @@ func TestUTC_TimeZoneConversions(t *testing.T) {
 			wantHour: 5, // UTC-7
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			converted := tt.convert(ut)
@@ -371,10 +328,8 @@ func TestUTC_TimeZoneConversions(t *testing.T) {
 		})
 	}
 }
-
 func TestUTC_Formatting(t *testing.T) {
 	ut := Time{time.Date(2024, 1, 2, 15, 4, 5, 0, time.UTC)}
-
 	tests := []struct {
 		name     string
 		format   func(Time) string
@@ -411,7 +366,6 @@ func TestUTC_Formatting(t *testing.T) {
 			expected: "Jan",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := tt.format(ut)
@@ -421,17 +375,13 @@ func TestUTC_Formatting(t *testing.T) {
 		})
 	}
 }
-
 func TestUTC_TimezoneError(t *testing.T) {
 	// Save original locationErr and restore it after test
 	originalErr := locationError
 	defer func() { locationError = originalErr }()
-
 	// Simulate timezone initialization failure
 	locationError = errors.New("simulated timezone initialization error")
-
 	testTime := Time{time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)}
-
 	tests := []struct {
 		name     string
 		got      time.Time
@@ -458,7 +408,6 @@ func TestUTC_TimezoneError(t *testing.T) {
 			expected: testTime.MST(),
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if !tt.got.Equal(tt.expected) {
@@ -468,17 +417,14 @@ func TestUTC_TimezoneError(t *testing.T) {
 		})
 	}
 }
-
 func TestValidateTimezoneAvailability(t *testing.T) {
 	err := ValidateTimezoneAvailability()
 	if !errors.Is(err, locationError) {
 		t.Errorf("Expected error to wrap %v, got %v", locationError, err)
 	}
 }
-
 func TestUTC_AdditionalFormats(t *testing.T) {
 	ut := Time{time.Date(2024, 1, 2, 15, 4, 5, 0, time.UTC)}
-
 	tests := []struct {
 		name     string
 		format   func(Time) string
@@ -520,7 +466,6 @@ func TestUTC_AdditionalFormats(t *testing.T) {
 			expected: "3:04PM",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := tt.format(ut)
@@ -530,10 +475,8 @@ func TestUTC_AdditionalFormats(t *testing.T) {
 		})
 	}
 }
-
 func TestUTC_AdditionalTimeFormats(t *testing.T) {
 	ut := Time{time.Date(2024, 1, 2, 15, 4, 5, 0, time.UTC)}
-
 	tests := []struct {
 		name     string
 		format   func(Time) string
@@ -600,7 +543,6 @@ func TestUTC_AdditionalTimeFormats(t *testing.T) {
 			expected: "January",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := tt.format(ut)
@@ -610,7 +552,6 @@ func TestUTC_AdditionalTimeFormats(t *testing.T) {
 		})
 	}
 }
-
 func TestUTC_ParseRFC3339Nano(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -630,7 +571,6 @@ func TestUTC_ParseRFC3339Nano(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := ParseRFC3339Nano(tt.input)
@@ -644,10 +584,8 @@ func TestUTC_ParseRFC3339Nano(t *testing.T) {
 		})
 	}
 }
-
 func TestUTC_ScanEdgeCases(t *testing.T) {
 	var ut Time
-
 	// Test scanning various time formats
 	tests := []struct {
 		name    string
@@ -680,7 +618,6 @@ func TestUTC_ScanEdgeCases(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := ut.Scan(tt.input)
@@ -690,10 +627,8 @@ func TestUTC_ScanEdgeCases(t *testing.T) {
 		})
 	}
 }
-
 func TestUTC_TimezoneFallbacks(t *testing.T) {
 	testTime := Time{time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)}
-
 	tests := []struct {
 		name     string
 		got      time.Time
@@ -720,7 +655,6 @@ func TestUTC_TimezoneFallbacks(t *testing.T) {
 			expected: testTime.Time.In(time.FixedZone("EST", -5*3600)),
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if !tt.got.Equal(tt.expected) {
@@ -729,7 +663,6 @@ func TestUTC_TimezoneFallbacks(t *testing.T) {
 		})
 	}
 }
-
 func TestUTC_ValueNilReceiver(t *testing.T) {
 	var ut Time // Use zero value instead of nil pointer
 	value, err := ut.Value()
@@ -740,7 +673,6 @@ func TestUTC_ValueNilReceiver(t *testing.T) {
 		t.Error("Value() on zero value should not return nil")
 	}
 }
-
 func TestUTC_ParseMultipleFormats(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -768,7 +700,6 @@ func TestUTC_ParseMultipleFormats(t *testing.T) {
 			wantErr: false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := ParseRFC3339(tt.input)
@@ -778,11 +709,9 @@ func TestUTC_ParseMultipleFormats(t *testing.T) {
 		})
 	}
 }
-
 func TestUTC_NilHandling(t *testing.T) {
 	// Test with nil pointer
 	var ut *Time = nil
-
 	// Test MarshalJSON with nil
 	data, err := ut.MarshalJSON()
 	if err == nil {
@@ -791,22 +720,18 @@ func TestUTC_NilHandling(t *testing.T) {
 	if data != nil {
 		t.Errorf("MarshalJSON() on nil receiver should return nil data, got %v", data)
 	}
-
 	// Test String() on nil - should not panic and return "<nil>"
 	if s := ut.String(); s != "<nil>" {
 		t.Errorf("String() on nil receiver should return \"<nil>\", got %q", s)
 	}
-
 	// Test Value() on nil - should return error and nil value
 	if v, err := ut.Value(); err == nil || v != nil {
 		t.Errorf("Value() on nil receiver should return (nil, error), got (%v, %v)", v, err)
 	}
 }
-
 func TestUTC_ZeroValueHandling(t *testing.T) {
 	// Test with zero value (empty struct) instead of nil pointer
 	var ut Time
-
 	// Test MarshalJSON with zero value
 	data, err := ut.MarshalJSON()
 	if err != nil {
@@ -815,13 +740,11 @@ func TestUTC_ZeroValueHandling(t *testing.T) {
 	if string(data) != `"0001-01-01T00:00:00Z"` {
 		t.Errorf("MarshalJSON() on zero value = %s, want %s", string(data), `"0001-01-01T00:00:00Z"`)
 	}
-
 	// Test String() with zero value
 	str := ut.String()
 	if str != "0001-01-01T00:00:00Z" {
 		t.Errorf("String() on zero value = %q, want %q", str, "0001-01-01T00:00:00Z")
 	}
-
 	// Test Value() with zero value
 	val, err := ut.Value()
 	if err != nil {
@@ -830,36 +753,30 @@ func TestUTC_ZeroValueHandling(t *testing.T) {
 	if val == nil {
 		t.Error("Value() on zero value should not return nil")
 	}
-
 	// Test IsZero() with zero value
 	if !ut.IsZero() {
 		t.Error("IsZero() should return true for zero value")
 	}
-
 	// Test with non-zero value
 	nonZero := Time{time.Now()}
 	if nonZero.IsZero() {
 		t.Error("IsZero() should return false for non-zero value")
 	}
 }
-
 func TestUTC_TimeFormatErrors(t *testing.T) {
 	ut := Time{time.Date(2024, 1, 2, 15, 4, 5, 0, time.UTC)}
-
 	// Test with invalid layout
 	result := ut.Format("invalid")
 	expected := "invalid"
 	if result != expected {
 		t.Errorf("Format() with invalid layout = %q, want %q", result, expected)
 	}
-
 	// Test TimeFormat with empty TimeLayout
 	result = ut.TimeFormat("")
 	if result != "" {
 		t.Errorf("TimeFormat() with empty layout should return empty string, got %s", result)
 	}
 }
-
 func TestUTC_ParseWithCustomLayout(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -894,7 +811,6 @@ func TestUTC_ParseWithCustomLayout(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Parse(tt.layout, tt.input)
@@ -908,7 +824,6 @@ func TestUTC_ParseWithCustomLayout(t *testing.T) {
 		})
 	}
 }
-
 func TestUTC_LocationInitialization(t *testing.T) {
 	err := ValidateTimezoneAvailability()
 	if err != nil {
@@ -918,11 +833,9 @@ func TestUTC_LocationInitialization(t *testing.T) {
 		}
 	}
 }
-
 func TestUTC_ComparisonEdgeCases(t *testing.T) {
 	zero := Time{}
 	now := Now()
-
 	// Test comparison with zero value
 	if zero.After(now) {
 		t.Error("Zero time should not be after now")
@@ -933,44 +846,36 @@ func TestUTC_ComparisonEdgeCases(t *testing.T) {
 	if zero.Equal(now) {
 		t.Error("Zero time should not equal now")
 	}
-
 	// Test comparison with same time
 	same := Now()
 	if !same.Equal(same) {
 		t.Error("Same time should equal itself")
 	}
 }
-
 func TestUTC_ArithmeticEdgeCases(t *testing.T) {
 	now := Now()
-
 	// Test adding/subtracting zero duration
 	if !now.Add(0).Equal(now) {
 		t.Error("Adding zero duration should return same time")
 	}
-
 	// Test adding negative duration
 	negDur := -time.Hour
 	if !now.Add(negDur).Add(time.Hour).Equal(now) {
 		t.Error("Adding negative then positive duration should return to original time")
 	}
-
 	// Test subtracting same time
 	if now.Sub(now) != 0 {
 		t.Error("Subtracting same time should return zero duration")
 	}
 }
-
 func TestUTC_RFC3339(t *testing.T) {
 	ut := Time{time.Date(2024, 1, 2, 15, 4, 5, 0, time.UTC)}
 	expected := "2024-01-02T15:04:05Z"
-
 	result := ut.RFC3339()
 	if result != expected {
 		t.Errorf("RFC3339() = %q, want %q", result, expected)
 	}
 }
-
 func TestUTC_UnmarshalText(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -1014,7 +919,6 @@ func TestUTC_UnmarshalText(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var ut Time
@@ -1029,7 +933,6 @@ func TestUTC_UnmarshalText(t *testing.T) {
 		})
 	}
 }
-
 func TestUTC_MarshalText(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -1047,7 +950,6 @@ func TestUTC_MarshalText(t *testing.T) {
 			expected: "0001-01-01T00:00:00Z",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := tt.time.MarshalText()
@@ -1061,7 +963,6 @@ func TestUTC_MarshalText(t *testing.T) {
 		})
 	}
 }
-
 func TestUTC_UnixHelpers(t *testing.T) {
 	// Test FromUnix
 	unixSec := int64(1704215045) // 2024-01-02 17:04:05 UTC
@@ -1070,7 +971,6 @@ func TestUTC_UnixHelpers(t *testing.T) {
 	if !t1.Time.Equal(expected1) {
 		t.Errorf("FromUnix() = %v, want %v", t1.Time, expected1)
 	}
-
 	// Test FromUnixMilli
 	unixMilli := int64(1704215045123) // 2024-01-02 17:04:05.123 UTC
 	t2 := FromUnixMilli(unixMilli)
@@ -1078,38 +978,32 @@ func TestUTC_UnixHelpers(t *testing.T) {
 	if !t2.Time.Equal(expected2) {
 		t.Errorf("FromUnixMilli() = %v, want %v", t2.Time, expected2)
 	}
-
 	// Test Unix() method
 	ut := Time{time.Date(2024, 1, 2, 17, 4, 5, 0, time.UTC)}
 	if ut.Unix() != 1704215045 {
 		t.Errorf("Unix() = %d, want %d", ut.Unix(), 1704215045)
 	}
-
 	// Test UnixMilli() method
 	utMilli := Time{time.Date(2024, 1, 2, 17, 4, 5, 123000000, time.UTC)}
 	if utMilli.UnixMilli() != 1704215045123 {
 		t.Errorf("UnixMilli() = %d, want %d", utMilli.UnixMilli(), 1704215045123)
 	}
 }
-
 func TestUTC_DayBoundaries(t *testing.T) {
 	// Test with a time in the middle of the day
 	ut := Time{time.Date(2024, 1, 2, 15, 30, 45, 123456789, time.UTC)}
-
 	// Test StartOfDay
 	start := ut.StartOfDay()
 	expectedStart := time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC)
 	if !start.Time.Equal(expectedStart) {
 		t.Errorf("StartOfDay() = %v, want %v", start.Time, expectedStart)
 	}
-
 	// Test EndOfDay
 	end := ut.EndOfDay()
 	expectedEnd := time.Date(2024, 1, 2+1, 0, 0, 0, -1, time.UTC) // One nanosecond before next midnight
 	if !end.Time.Equal(expectedEnd) {
 		t.Errorf("EndOfDay() = %v, want %v", end.Time, expectedEnd)
 	}
-
 	// Verify that start is before original time and original time is before end
 	if !start.Before(ut) {
 		t.Error("StartOfDay should be before original time")
@@ -1118,10 +1012,8 @@ func TestUTC_DayBoundaries(t *testing.T) {
 		t.Error("Original time should be before EndOfDay")
 	}
 }
-
 func TestUTC_LocationHelpers(t *testing.T) {
 	ut := Time{time.Date(2024, 1, 2, 15, 4, 5, 0, time.UTC)}
-
 	// Test In() with valid timezone
 	eastern, err := ut.In("America/New_York")
 	if err != nil {
@@ -1131,13 +1023,11 @@ func TestUTC_LocationHelpers(t *testing.T) {
 	if eastern.Hour() != 10 {
 		t.Errorf("In('America/New_York') hour = %d, want 10", eastern.Hour())
 	}
-
 	// Test In() with invalid timezone
 	_, err = ut.In("Invalid/Timezone")
 	if err == nil {
 		t.Error("In() with invalid timezone should return error")
 	}
-
 	// Test InLocation()
 	loc, _ := time.LoadLocation("America/Los_Angeles")
 	pacific := ut.InLocation(loc)
@@ -1146,10 +1036,8 @@ func TestUTC_LocationHelpers(t *testing.T) {
 		t.Errorf("InLocation() hour = %d, want 7", pacific.Hour())
 	}
 }
-
 func TestUTC_ScanEnhanced(t *testing.T) {
 	var ut Time
-
 	// Test scanning []byte
 	err := ut.Scan([]byte("2024-01-02T15:04:05Z"))
 	if err != nil {
@@ -1159,7 +1047,6 @@ func TestUTC_ScanEnhanced(t *testing.T) {
 	if !ut.Time.Equal(expected) {
 		t.Errorf("Scan([]byte) = %v, want %v", ut.Time, expected)
 	}
-
 	// Test scanning []byte with flexible format
 	err = ut.Scan([]byte("2024-01-02"))
 	if err != nil {
@@ -1169,20 +1056,17 @@ func TestUTC_ScanEnhanced(t *testing.T) {
 	if !ut.Time.Equal(expectedDate) {
 		t.Errorf("Scan([]byte date only) = %v, want %v", ut.Time, expectedDate)
 	}
-
 	// Test scanning invalid []byte
 	err = ut.Scan([]byte("invalid-time"))
 	if err == nil {
 		t.Error("Scan(invalid []byte) should return error")
 	}
-
 	// Test scanning float64 (unsupported type)
 	err = ut.Scan(float64(123.45))
 	if err == nil {
 		t.Error("Scan(float64) should return error")
 	}
 }
-
 func TestUTC_InternalParse(t *testing.T) {
 	// Test our internal parse function through public APIs
 	tests := []struct {
@@ -1210,7 +1094,6 @@ func TestUTC_InternalParse(t *testing.T) {
 			wantErr: false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Test through UnmarshalJSON which uses parse
@@ -1227,7 +1110,6 @@ func TestUTC_InternalParse(t *testing.T) {
 		})
 	}
 }
-
 func TestUTC_TimezoneInitErrors(t *testing.T) {
 	// Test ValidateTimezoneAvailability when there's no error
 	if locationError == nil {
@@ -1235,159 +1117,5 @@ func TestUTC_TimezoneInitErrors(t *testing.T) {
 		if err != nil {
 			t.Errorf("ValidateTimezoneAvailability() with no location error should return nil, got %v", err)
 		}
-	}
-}
-
-func TestUTC_UnmarshalYAML(t *testing.T) {
-	tests := []struct {
-		name    string
-		input   string
-		want    time.Time
-		wantErr bool
-	}{
-		{
-			name:    "RFC3339 format",
-			input:   `"2023-01-01T12:00:00Z"`,
-			want:    time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC),
-			wantErr: false,
-		},
-		{
-			name:    "Date only format",
-			input:   `"2023-06-15"`,
-			want:    time.Date(2023, 6, 15, 0, 0, 0, 0, time.UTC),
-			wantErr: false,
-		},
-		{
-			name:    "Year-month format",
-			input:   `"2024-06"`,
-			want:    time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC),
-			wantErr: false,
-		},
-		{
-			name:    "Year only format",
-			input:   `"2024"`,
-			want:    time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-			wantErr: false,
-		},
-		{
-			name:    "Date time format",
-			input:   `"2023-01-01 15:30:45"`,
-			want:    time.Date(2023, 1, 1, 15, 30, 45, 0, time.UTC),
-			wantErr: false,
-		},
-		{
-			name:    "Empty string",
-			input:   `""`,
-			want:    time.Time{},
-			wantErr: false,
-		},
-		{
-			name:    "Invalid format",
-			input:   `"not-a-date"`,
-			wantErr: true,
-		},
-		{
-			name:    "Invalid month",
-			input:   `"2023-13-01"`,
-			wantErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var ut Time
-			err := yaml.Unmarshal([]byte(tt.input), &ut)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("UnmarshalYAML() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !tt.wantErr && !ut.Time.Equal(tt.want) {
-				t.Errorf("UnmarshalYAML() = %v, want %v", ut.Time, tt.want)
-			}
-		})
-	}
-}
-
-func TestUTC_MarshalYAML(t *testing.T) {
-	tests := []struct {
-		name    string
-		time    Time
-		want    string
-		wantErr bool
-	}{
-		{
-			name: "Normal time",
-			time: Time{time.Date(2023, 6, 15, 12, 30, 45, 0, time.UTC)},
-			want: "\"2023-06-15T12:30:45Z\"\n",
-			wantErr: false,
-		},
-		{
-			name: "Zero time",
-			time: Time{time.Time{}},
-			want: "null\n",
-			wantErr: false,
-		},
-		{
-			name: "Time with nanoseconds",
-			time: Time{time.Date(2023, 6, 15, 12, 30, 45, 123456789, time.UTC)},
-			want: "\"2023-06-15T12:30:45Z\"\n",
-			wantErr: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			data, err := yaml.Marshal(tt.time)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("MarshalYAML() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !tt.wantErr && string(data) != tt.want {
-				t.Errorf("MarshalYAML() = %q, want %q", string(data), tt.want)
-			}
-		})
-	}
-}
-
-func TestUTC_YAMLRoundTrip(t *testing.T) {
-	// Test that we can marshal and unmarshal back to the same value
-	tests := []struct {
-		name string
-		time Time
-	}{
-		{
-			name: "Normal time",
-			time: Time{time.Date(2023, 6, 15, 12, 30, 45, 0, time.UTC)},
-		},
-		{
-			name: "Date only",
-			time: Time{time.Date(2023, 6, 15, 0, 0, 0, 0, time.UTC)},
-		},
-		{
-			name: "Year month",
-			time: Time{time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Marshal to YAML
-			data, err := yaml.Marshal(tt.time)
-			if err != nil {
-				t.Fatalf("Failed to marshal: %v", err)
-			}
-
-			// Unmarshal back
-			var result Time
-			err = yaml.Unmarshal(data, &result)
-			if err != nil {
-				t.Fatalf("Failed to unmarshal: %v", err)
-			}
-
-			// Compare (ignoring nanoseconds which might be lost in formatting)
-			if !result.Time.Truncate(time.Second).Equal(tt.time.Time.Truncate(time.Second)) {
-				t.Errorf("Round trip failed: got %v, want %v", result.Time, tt.time.Time)
-			}
-		})
 	}
 }
