@@ -12,29 +12,37 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/agentstation/utc?style=flat-square)](https://goreportcard.com/report/github.com/agentstation/utc)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/agentstation/utc/ci.yaml?style=flat-square)](https://github.com/agentstation/utc/actions)
 [![codecov](https://codecov.io/gh/agentstation/utc/graph/badge.svg?token=EOAZUVVH7H)](https://codecov.io/gh/agentstation/utc)
-[![License](http://img.shields.io/badge/license-mit-blue.svg?style=flat-square)](https://raw.githubusercontent.com/agentstation/utc/master/LICENSE)
+[![License](http://img.shields.io/badge/license-mit-blue.svg?style=flat-square)](https://raw.githubusercontent.com/agentstation/utc/main/LICENSE)
 
-The `utc` package provides an enhanced, **zero-dependency** wrapper around Go's `time.Time` that ensures your times are consistently in UTC while adding powerful convenience methods for real-world applications.
+The `utc` package provides a **zero-dependency** wrapper around Go's `time.Time` for applications that want timestamp fields normalized to UTC at package boundaries.
 
-## Key Features 🌟
+## What It Solves
 
-### **🛡️ Safety & Reliability**
-- **Nil-safe operations** - No more panic on nil receivers
-- **Guaranteed UTC storage** - Eliminates timezone confusion
-- **Race condition tested** - Safe for concurrent applications
-- **Comprehensive error handling** - Graceful failures instead of crashes
+Go's `time.Time` is flexible, but UTC storage is usually a convention that every caller has to remember. `utc.Time` makes that convention a package boundary: values are normalized when they enter, stored privately, and emitted as UTC through JSON, text, YAML, SQL, and standard `time.Time` accessors.
 
-### **🎯 Developer Productivity**  
-- **Rich formatting options** - US/EU dates, RFC standards, custom layouts
-- **Automatic timezone handling** - PST/PDT, EST/EDT transitions
-- **Flexible parsing** - Handles multiple input formats automatically
-- **Serialization ready** - JSON, YAML, Database, Text encoding
+Use it for API models, database records, event payloads, and config structs where timestamps should always represent instants in UTC.
 
-### **⚡ Performance & Compatibility**
-- **Zero dependencies** - No external packages required
-- **Lightweight footprint** - Minimal impact on your binary size
-- **Go 1.18+ compatible** - Works with modern and legacy Go versions
-- **Drop-in replacement** - Compatible with standard `time.Time` methods
+## Key Features
+
+### UTC Storage
+- The underlying `time.Time` is unexported, so callers cannot construct non-UTC values with struct literals.
+- Constructors, parsers, scanners, and unmarshaling methods normalize values to UTC.
+- Use `t.UTC()` or `t.Time()` when you need a standard `time.Time`.
+
+### Serialization
+- JSON accepts strings or `null`; non-string JSON values are rejected.
+- JSON, text, and YAML output preserve sub-second precision with RFC3339Nano formatting.
+- SQL `Value` and `Scan` support UTC-normalized database boundaries.
+
+### Convenience
+- Common US/EU date and time formatting helpers.
+- Named US timezone helpers with DST-aware `Pacific`, `Eastern`, `Central`, and `Mountain` conversions.
+- Unix timestamp and UTC day-boundary helpers.
+
+### Compatibility
+- Zero external dependencies.
+- Go 1.18 or later.
+- Not a drop-in replacement for `time.Time`; it intentionally hides the wrapped value to protect the UTC invariant.
 
 ## Installation
 
@@ -46,36 +54,37 @@ go get github.com/agentstation/utc
 
 **Requirements**: Go 1.18 or later
 
-**YAML Usage**: The package includes full YAML support. To use YAML functionality, install a YAML library:
+**YAML Usage**: The package implements YAML marshal/unmarshal interface methods. To encode or decode YAML in an application, install the YAML library you already use:
 ```bash
-go get github.com/goccy/go-yaml  # Recommended YAML library
+go get github.com/goccy/go-yaml@v1.10.1
 ```
 
-## Why Choose UTC? 🚀
+## Why Choose UTC?
 
 ### ✅ **Zero Dependencies**
 - **No external dependencies** for core functionality
 - **Lightweight** - adds minimal footprint to your project
 - **Fast installation** - `go get` with no dependency resolution delays
 
-### ✅ **Maximum Compatibility**  
+### ✅ **Maximum Compatibility**
 - **Go 1.18+** support (broader than most time libraries)
 - **Cross-platform** - works on all Go-supported platforms
-- **Future-proof** - extensively tested across Go 1.18-1.24
 
-### ✅ **Production-Ready Safety**
-- **Nil-safe operations** - methods return errors instead of panicking
+### ✅ **Boundary Safety**
+- **Enforced UTC storage** - wrapped values are normalized before storage and output
+- **Strict JSON input** - accidental numbers, booleans, objects, and arrays are rejected
+- **Precision preserving** - nanoseconds survive JSON/text/YAML round trips
 - **Race condition tested** - safe for concurrent use
-- **Comprehensive test coverage** - battle-tested with 100+ test cases
+- **Comprehensive test coverage** - focused coverage for parsing, formatting, serialization, database, and timezone helpers
 
 ### ✅ **Developer Experience**
-- **Intuitive API** - familiar time.Time wrapper with enhanced functionality  
+- **Small API** - explicit constructors and explicit conversion back to `time.Time`
 - **Rich formatting options** - US/EU date formats, RFC standards, custom layouts
 - **Automatic timezone handling** - PST/PDT, EST/EDT transitions handled correctly
 - **Serialization ready** - JSON, YAML, Database, Text encoding
 
 ### ✅ **Optional Advanced Features**
-- **Debug mode** - development-time nil pointer detection  
+- **Debug mode** - development-time logging for nil receiver calls on pointer-based methods
 - **Flexible parsing** - handles multiple time formats automatically
 
 ## Quick Start
@@ -103,33 +112,34 @@ func main() {
 }
 ```
 
-## UTC vs Standard Library ⚡
+## UTC vs Standard Library
 
 See the difference between `utc` and Go's standard `time` package:
 
 | Feature | Standard `time.Time` | `utc.Time` |
 |---------|---------------------|------------|
-| **Timezone Safety** | ❌ Manual timezone handling | ✅ **Always UTC, automatic conversion** |
-| **Nil Safety** | ❌ Panics on nil receiver | ✅ **Returns errors gracefully** |
-| **Dependencies** | ✅ Zero deps | ✅ **Zero deps (core)** |
-| **Rich Formatting** | ❌ Manual layout strings | ✅ **Built-in US/EU/ISO formats** |
-| **Timezone Conversion** | ❌ Manual location loading | ✅ **Auto PST/PDT, EST/EDT handling** |
-| **JSON Support** | ✅ Basic marshal/unmarshal | ✅ **Enhanced parsing & formatting** |
-| **YAML Support** | ❌ No built-in support | ✅ **Full YAML marshal/unmarshal** |
-| **Text Encoding** | ❌ Limited support | ✅ **Full MarshalText/UnmarshalText** |
-| **Database Ready** | ✅ Basic support | ✅ **Enhanced Scan/Value methods** |
-| **Unix Timestamps** | ✅ Basic Unix() method | ✅ **Unix + UnixMilli helpers** |
-| **Day Boundaries** | ❌ Manual calculation | ✅ **StartOfDay/EndOfDay methods** |
-| **Production Safety** | ❌ Can panic unexpectedly | ✅ **Error-first design** |
-| **Debug Support** | ❌ No debugging aids | ✅ **Optional debug mode** |
+| **UTC Storage** | Manual convention | Enforced by unexported storage and constructors |
+| **Dependencies** | Zero deps | Zero deps |
+| **Rich Formatting** | Manual layout strings | Built-in US/EU/RFC helpers |
+| **Timezone Conversion** | Manual location loading | Helpers for common US zones plus generic `In` |
+| **JSON Support** | RFC3339 string support | Strict string/null input, UTC normalization, RFC3339Nano output |
+| **YAML Support** | No built-in YAML methods | `MarshalYAML`/`UnmarshalYAML` interface methods |
+| **Text Encoding** | `time.Time` supports text encoding | UTC-normalized text encoding |
+| **Database Ready** | `time.Time` is database-friendly | UTC-normalized `Scan`/`Value` methods |
+| **Unix Timestamps** | `Unix`/`UnixMilli` methods | `Unix`/`UnixMilli` plus constructors |
+| **Day Boundaries** | Manual calculation | UTC `StartOfDay`/`EndOfDay` methods |
+| **Debug Support** | N/A | Optional debug logging for nil pointer calls |
 
 **Before** (standard library):
 ```go
-loc, _ := time.LoadLocation("America/New_York")
-t := time.Now().In(loc)  // Hope timezone exists!
-if t != nil {            // Manual nil checking
-    fmt.Println(t.Format("01/02/2006"))  // Remember layout
+createdAt := time.Now().UTC()
+fmt.Println(createdAt.Format("01/02/2006"))
+
+loc, err := time.LoadLocation("America/New_York")
+if err != nil {
+    return err
 }
+fmt.Println(createdAt.In(loc).Format(time.Kitchen))
 ```
 
 **After** (with UTC):
@@ -137,7 +147,6 @@ if t != nil {            // Manual nil checking
 t := utc.Now()
 fmt.Println(t.Eastern().Format(time.Kitchen))  // Auto EST/EDT
 fmt.Println(t.USDateShort())                   // "01/15/2024"
-// No panics, no manual timezone loading, no layout memorization!
 ```
 
 ## Detailed Usage
@@ -219,34 +228,27 @@ type Record struct {
 
 ## YAML Support
 
-The package includes full YAML marshaling/unmarshaling support through `MarshalYAML`/`UnmarshalYAML` methods that implement the standard YAML interfaces. Works with any Go YAML library that follows these interfaces.
-
-**Requirements for YAML testing**:
-- Go 1.21.0+ (required by go-yaml dependency)
-- `github.com/goccy/go-yaml` package
+The package includes YAML marshaling/unmarshaling support through `MarshalYAML`/`UnmarshalYAML` methods that follow the common Go YAML interfaces. The package itself does not import a YAML library.
 
 ```sh
-# Install the YAML testing dependency
-go get github.com/goccy/go-yaml@v1.18.0
-
-# Run all tests including YAML functionality
+# Run root tests including YAML interface coverage
 go test -tags yaml ./...
 
-# Run only YAML-specific tests
-go test -tags yaml -run YAML ./...
+# Run root YAML tests plus real YAML codec integration tests
+make test-yaml
 ```
 
-**Note**: The YAML marshal/unmarshal methods are available in the main package, but the actual YAML processing requires the go-yaml dependency. Most users won't need YAML functionality for production use.
+**Note**: Actual YAML file parsing/emission requires a YAML package in your application. `utc` only provides the methods those packages call. The example above matches the Go 1.18-compatible version used by the integration test; newer YAML library releases may require newer Go versions. The real codec integration test lives in `integration/yaml` so the root module remains dependency-free.
 
 ## Testing
 
 The project includes comprehensive Makefile targets for testing:
 
 ```sh
-# Run core tests (Go 1.18+, no dependencies)
+# Run tests (Go 1.18+, no dependencies)
 make test
 
-# Run tests with YAML support (requires Go 1.21.0+)
+# Run tests with YAML interface and real codec coverage
 make test-yaml
 
 # Run all tests (core + YAML)
@@ -270,11 +272,11 @@ go build -tags debug
 go test -tags debug ./...
 ```
 
-When debug mode is enabled, the package logs warnings when methods are called on nil receivers:
+When debug mode is enabled, the package logs warnings when pointer-based methods that can return errors are called on nil receivers:
 
 ```
-[UTC DEBUG] 2024/01/02 15:04:05 debug.go:26: String() called on nil *Time receiver
-[UTC DEBUG] 2024/01/02 15:04:05 debug.go:26: Value() called on nil *Time receiver
+[UTC DEBUG] 2024/01/02 15:04:05 debug.go:26: MarshalJSON() called on nil *Time receiver
+[UTC DEBUG] 2024/01/02 15:04:05 debug.go:26: Scan() called on nil *Time receiver
 ```
 
 ## Additional Utilities
@@ -307,25 +309,24 @@ tokyo, err := t.In("Asia/Tokyo")
 import "github.com/agentstation/utc"
 ```
 
-Package utc provides a time.Time wrapper that ensures all times are in UTC.
+Package utc provides a small time.Time wrapper that stores instants in UTC.
 
-The package offers enhanced safety by gracefully handling nil receivers instead of panicking, making it more suitable for production environments. When compiled with the debug build tag \(\-tags debug\), it provides additional logging for nil receiver method calls to help identify potential bugs during development.
+The package keeps the underlying time.Time value unexported, normalizes values through constructors, parsers, scanners, and serializers, and exposes UTC time.Time values through Time and UTC. When compiled with the debug build tag \(\-tags debug\), pointer\-based methods log nil receiver calls before returning errors where Go permits that behavior.
 
 Key features:
 
-- All times are automatically converted to and stored in UTC
-- JSON marshaling/unmarshaling with flexible parsing
-- Full YAML marshaling/unmarshaling support
-- SQL database compatibility with enhanced type support
+- Constructors and parsers normalize values to UTC
+- JSON marshaling/unmarshaling uses strict string/null inputs and preserves sub\-second precision
+- Text and YAML marshal/unmarshal support
+- SQL database compatibility
 - Timezone conversion helpers with automatic DST handling
 - Extensive formatting options for US and EU date formats
-- Nil\-safe operations that return errors instead of panicking
 
 Debug mode:
 
 ```
 To enable debug logging, compile with: go build -tags debug
-This will log warnings when methods are called on nil receivers.
+This logs nil receiver calls for pointer-based methods that can return errors.
 ```
 
 ## Index
@@ -378,8 +379,9 @@ This will log warnings when methods are called on nil receivers.
   - [func \(t Time\) RFC850\(\) string](<#Time.RFC850>)
   - [func \(t \*Time\) Scan\(value any\) error](<#Time.Scan>)
   - [func \(t Time\) StartOfDay\(\) Time](<#Time.StartOfDay>)
-  - [func \(t \*Time\) String\(\) string](<#Time.String>)
+  - [func \(t Time\) String\(\) string](<#Time.String>)
   - [func \(t Time\) Sub\(u Time\) time.Duration](<#Time.Sub>)
+  - [func \(t Time\) Time\(\) time.Time](<#Time.Time>)
   - [func \(t Time\) TimeFormat\(layout TimeLayout\) string](<#Time.TimeFormat>)
   - [func \(t Time\) TimeOnly\(\) string](<#Time.TimeOnly>)
   - [func \(t Time\) USDateLong\(\) string](<#Time.USDateLong>)
@@ -394,14 +396,14 @@ This will log warnings when methods are called on nil receivers.
   - [func \(t \*Time\) UnmarshalJSON\(data \[\]byte\) error](<#Time.UnmarshalJSON>)
   - [func \(t \*Time\) UnmarshalText\(text \[\]byte\) error](<#Time.UnmarshalText>)
   - [func \(t \*Time\) UnmarshalYAML\(unmarshal func\(any\) error\) error](<#Time.UnmarshalYAML>)
-  - [func \(t \*Time\) Value\(\) \(driver.Value, error\)](<#Time.Value>)
+  - [func \(t Time\) Value\(\) \(driver.Value, error\)](<#Time.Value>)
   - [func \(t Time\) WeekdayLong\(\) string](<#Time.WeekdayLong>)
   - [func \(t Time\) WeekdayShort\(\) string](<#Time.WeekdayShort>)
 - [type TimeLayout](<#TimeLayout>)
 
 
 <a name="ValidateTimezoneAvailability"></a>
-## func [ValidateTimezoneAvailability](<https://github.com/agentstation/utc/blob/master/utc.go#L106>)
+## func [ValidateTimezoneAvailability](<https://github.com/agentstation/utc/blob/main/utc.go#L96>)
 
 ```go
 func ValidateTimezoneAvailability() error
@@ -410,18 +412,18 @@ func ValidateTimezoneAvailability() error
 ValidateTimezoneAvailability checks if all timezone locations were properly initialized Returns nil if initialization was successful, otherwise returns the initialization error
 
 <a name="Time"></a>
-## type [Time](<https://github.com/agentstation/utc/blob/master/utc.go#L114-L116>)
+## type [Time](<https://github.com/agentstation/utc/blob/main/utc.go#L104-L106>)
 
-Time is an alias for time.Time that defaults to UTC time.
+Time stores a time instant normalized to UTC.
 
 ```go
 type Time struct {
-    time.Time
+    // contains filtered or unexported fields
 }
 ```
 
 <a name="FromUnix"></a>
-### func [FromUnix](<https://github.com/agentstation/utc/blob/master/utc.go#L566>)
+### func [FromUnix](<https://github.com/agentstation/utc/blob/main/utc.go#L579>)
 
 ```go
 func FromUnix(sec int64) Time
@@ -430,7 +432,7 @@ func FromUnix(sec int64) Time
 Unix helpers
 
 <a name="FromUnixMilli"></a>
-### func [FromUnixMilli](<https://github.com/agentstation/utc/blob/master/utc.go#L567>)
+### func [FromUnixMilli](<https://github.com/agentstation/utc/blob/main/utc.go#L580>)
 
 ```go
 func FromUnixMilli(ms int64) Time
@@ -439,7 +441,7 @@ func FromUnixMilli(ms int64) Time
 
 
 <a name="New"></a>
-### func [New](<https://github.com/agentstation/utc/blob/master/utc.go#L124>)
+### func [New](<https://github.com/agentstation/utc/blob/main/utc.go#L114>)
 
 ```go
 func New(t time.Time) Time
@@ -448,7 +450,7 @@ func New(t time.Time) Time
 New returns a new Time from a time.Time
 
 <a name="Now"></a>
-### func [Now](<https://github.com/agentstation/utc/blob/master/utc.go#L119>)
+### func [Now](<https://github.com/agentstation/utc/blob/main/utc.go#L109>)
 
 ```go
 func Now() Time
@@ -457,7 +459,7 @@ func Now() Time
 Now returns the current time in UTC
 
 <a name="Parse"></a>
-### func [Parse](<https://github.com/agentstation/utc/blob/master/utc.go#L147>)
+### func [Parse](<https://github.com/agentstation/utc/blob/main/utc.go#L146>)
 
 ```go
 func Parse(layout string, s string) (Time, error)
@@ -466,7 +468,7 @@ func Parse(layout string, s string) (Time, error)
 Parse parses a time string in the specified format and returns a utc.Time
 
 <a name="ParseRFC3339"></a>
-### func [ParseRFC3339](<https://github.com/agentstation/utc/blob/master/utc.go#L129>)
+### func [ParseRFC3339](<https://github.com/agentstation/utc/blob/main/utc.go#L128>)
 
 ```go
 func ParseRFC3339(s string) (Time, error)
@@ -475,7 +477,7 @@ func ParseRFC3339(s string) (Time, error)
 ParseRFC3339 parses a time string in RFC3339 format and returns a utc.Time
 
 <a name="ParseRFC3339Nano"></a>
-### func [ParseRFC3339Nano](<https://github.com/agentstation/utc/blob/master/utc.go#L138>)
+### func [ParseRFC3339Nano](<https://github.com/agentstation/utc/blob/main/utc.go#L137>)
 
 ```go
 func ParseRFC3339Nano(s string) (Time, error)
@@ -484,7 +486,7 @@ func ParseRFC3339Nano(s string) (Time, error)
 ParseRFC3339Nano parses a time string in RFC3339Nano format and returns a utc.Time
 
 <a name="Time.ANSIC"></a>
-### func \(Time\) [ANSIC](<https://github.com/agentstation/utc/blob/master/utc.go#L441>)
+### func \(Time\) [ANSIC](<https://github.com/agentstation/utc/blob/main/utc.go#L451>)
 
 ```go
 func (t Time) ANSIC() string
@@ -493,7 +495,7 @@ func (t Time) ANSIC() string
 ANSIC formats time as "Mon Jan \_2 15:04:05 2006"
 
 <a name="Time.Add"></a>
-### func \(Time\) [Add](<https://github.com/agentstation/utc/blob/master/utc.go#L326>)
+### func \(Time\) [Add](<https://github.com/agentstation/utc/blob/main/utc.go#L336>)
 
 ```go
 func (t Time) Add(d time.Duration) Time
@@ -502,7 +504,7 @@ func (t Time) Add(d time.Duration) Time
 Add returns the time t\+d
 
 <a name="Time.After"></a>
-### func \(Time\) [After](<https://github.com/agentstation/utc/blob/master/utc.go#L316>)
+### func \(Time\) [After](<https://github.com/agentstation/utc/blob/main/utc.go#L326>)
 
 ```go
 func (t Time) After(u Time) bool
@@ -511,7 +513,7 @@ func (t Time) After(u Time) bool
 After reports whether the time is after u
 
 <a name="Time.Before"></a>
-### func \(Time\) [Before](<https://github.com/agentstation/utc/blob/master/utc.go#L311>)
+### func \(Time\) [Before](<https://github.com/agentstation/utc/blob/main/utc.go#L321>)
 
 ```go
 func (t Time) Before(u Time) bool
@@ -520,7 +522,7 @@ func (t Time) Before(u Time) bool
 Before reports whether the time is before u
 
 <a name="Time.CST"></a>
-### func \(Time\) [CST](<https://github.com/agentstation/utc/blob/master/utc.go#L351>)
+### func \(Time\) [CST](<https://github.com/agentstation/utc/blob/main/utc.go#L361>)
 
 ```go
 func (t Time) CST() time.Time
@@ -529,7 +531,7 @@ func (t Time) CST() time.Time
 CST returns t in CST
 
 <a name="Time.Central"></a>
-### func \(Time\) [Central](<https://github.com/agentstation/utc/blob/master/utc.go#L377>)
+### func \(Time\) [Central](<https://github.com/agentstation/utc/blob/main/utc.go#L387>)
 
 ```go
 func (t Time) Central() time.Time
@@ -538,7 +540,7 @@ func (t Time) Central() time.Time
 Central returns t in Central time \(handles CST/CDT automatically\)
 
 <a name="Time.DateOnly"></a>
-### func \(Time\) [DateOnly](<https://github.com/agentstation/utc/blob/master/utc.go#L535>)
+### func \(Time\) [DateOnly](<https://github.com/agentstation/utc/blob/main/utc.go#L545>)
 
 ```go
 func (t Time) DateOnly() string
@@ -547,7 +549,7 @@ func (t Time) DateOnly() string
 DateOnly formats time as "2006\-01\-02"
 
 <a name="Time.EST"></a>
-### func \(Time\) [EST](<https://github.com/agentstation/utc/blob/master/utc.go#L346>)
+### func \(Time\) [EST](<https://github.com/agentstation/utc/blob/main/utc.go#L356>)
 
 ```go
 func (t Time) EST() time.Time
@@ -556,7 +558,7 @@ func (t Time) EST() time.Time
 EST returns t in EST
 
 <a name="Time.EUDateLong"></a>
-### func \(Time\) [EUDateLong](<https://github.com/agentstation/utc/blob/master/utc.go#L487>)
+### func \(Time\) [EUDateLong](<https://github.com/agentstation/utc/blob/main/utc.go#L497>)
 
 ```go
 func (t Time) EUDateLong() string
@@ -565,7 +567,7 @@ func (t Time) EUDateLong() string
 EUDateLong formats time as "2 January 2006"
 
 <a name="Time.EUDateShort"></a>
-### func \(Time\) [EUDateShort](<https://github.com/agentstation/utc/blob/master/utc.go#L482>)
+### func \(Time\) [EUDateShort](<https://github.com/agentstation/utc/blob/main/utc.go#L492>)
 
 ```go
 func (t Time) EUDateShort() string
@@ -574,7 +576,7 @@ func (t Time) EUDateShort() string
 EUDateShort formats time as "02/01/2006"
 
 <a name="Time.EUDateTime12"></a>
-### func \(Time\) [EUDateTime12](<https://github.com/agentstation/utc/blob/master/utc.go#L492>)
+### func \(Time\) [EUDateTime12](<https://github.com/agentstation/utc/blob/main/utc.go#L502>)
 
 ```go
 func (t Time) EUDateTime12() string
@@ -583,7 +585,7 @@ func (t Time) EUDateTime12() string
 EUDateTime12 formats time as "02/01/2006 03:04:05 PM"
 
 <a name="Time.EUDateTime24"></a>
-### func \(Time\) [EUDateTime24](<https://github.com/agentstation/utc/blob/master/utc.go#L497>)
+### func \(Time\) [EUDateTime24](<https://github.com/agentstation/utc/blob/main/utc.go#L507>)
 
 ```go
 func (t Time) EUDateTime24() string
@@ -592,7 +594,7 @@ func (t Time) EUDateTime24() string
 EUDateTime24 formats time as "02/01/2006 15:04:05"
 
 <a name="Time.EUTime12"></a>
-### func \(Time\) [EUTime12](<https://github.com/agentstation/utc/blob/master/utc.go#L502>)
+### func \(Time\) [EUTime12](<https://github.com/agentstation/utc/blob/main/utc.go#L512>)
 
 ```go
 func (t Time) EUTime12() string
@@ -601,7 +603,7 @@ func (t Time) EUTime12() string
 EUTime12 formats time as "3:04 PM"
 
 <a name="Time.EUTime24"></a>
-### func \(Time\) [EUTime24](<https://github.com/agentstation/utc/blob/master/utc.go#L507>)
+### func \(Time\) [EUTime24](<https://github.com/agentstation/utc/blob/main/utc.go#L517>)
 
 ```go
 func (t Time) EUTime24() string
@@ -610,7 +612,7 @@ func (t Time) EUTime24() string
 EUTime24 formats time as "15:04"
 
 <a name="Time.Eastern"></a>
-### func \(Time\) [Eastern](<https://github.com/agentstation/utc/blob/master/utc.go#L369>)
+### func \(Time\) [Eastern](<https://github.com/agentstation/utc/blob/main/utc.go#L379>)
 
 ```go
 func (t Time) Eastern() time.Time
@@ -619,7 +621,7 @@ func (t Time) Eastern() time.Time
 Eastern returns t in Eastern time \(handles EST/EDT automatically\)
 
 <a name="Time.EndOfDay"></a>
-### func \(Time\) [EndOfDay](<https://github.com/agentstation/utc/blob/master/utc.go#L577>)
+### func \(Time\) [EndOfDay](<https://github.com/agentstation/utc/blob/main/utc.go#L590>)
 
 ```go
 func (t Time) EndOfDay() Time
@@ -628,7 +630,7 @@ func (t Time) EndOfDay() Time
 
 
 <a name="Time.Equal"></a>
-### func \(Time\) [Equal](<https://github.com/agentstation/utc/blob/master/utc.go#L321>)
+### func \(Time\) [Equal](<https://github.com/agentstation/utc/blob/main/utc.go#L331>)
 
 ```go
 func (t Time) Equal(u Time) bool
@@ -637,7 +639,7 @@ func (t Time) Equal(u Time) bool
 Equal reports whether t and u represent the same time instant
 
 <a name="Time.Format"></a>
-### func \(Time\) [Format](<https://github.com/agentstation/utc/blob/master/utc.go#L398>)
+### func \(Time\) [Format](<https://github.com/agentstation/utc/blob/main/utc.go#L408>)
 
 ```go
 func (t Time) Format(layout string) string
@@ -646,7 +648,7 @@ func (t Time) Format(layout string) string
 Format formats the time using the specified layout
 
 <a name="Time.ISO8601"></a>
-### func \(Time\) [ISO8601](<https://github.com/agentstation/utc/blob/master/utc.go#L421>)
+### func \(Time\) [ISO8601](<https://github.com/agentstation/utc/blob/main/utc.go#L431>)
 
 ```go
 func (t Time) ISO8601() string
@@ -655,7 +657,7 @@ func (t Time) ISO8601() string
 ISO8601 formats time as "2006\-01\-02T15:04:05Z07:00" \(same as RFC3339\)
 
 <a name="Time.In"></a>
-### func \(Time\) [In](<https://github.com/agentstation/utc/blob/master/utc.go#L552>)
+### func \(Time\) [In](<https://github.com/agentstation/utc/blob/main/utc.go#L562>)
 
 ```go
 func (t Time) In(name string) (time.Time, error)
@@ -664,7 +666,7 @@ func (t Time) In(name string) (time.Time, error)
 In converts time to a named location \(e.g., "America/Los\_Angeles"\).
 
 <a name="Time.InLocation"></a>
-### func \(Time\) [InLocation](<https://github.com/agentstation/utc/blob/master/utc.go#L561>)
+### func \(Time\) [InLocation](<https://github.com/agentstation/utc/blob/main/utc.go#L571>)
 
 ```go
 func (t Time) InLocation(loc *time.Location) time.Time
@@ -673,7 +675,7 @@ func (t Time) InLocation(loc *time.Location) time.Time
 InLocation converts time to a provided \*time.Location.
 
 <a name="Time.IsZero"></a>
-### func \(Time\) [IsZero](<https://github.com/agentstation/utc/blob/master/utc.go#L393>)
+### func \(Time\) [IsZero](<https://github.com/agentstation/utc/blob/main/utc.go#L403>)
 
 ```go
 func (t Time) IsZero() bool
@@ -682,7 +684,7 @@ func (t Time) IsZero() bool
 Add the useful utility methods while maintaining chainability
 
 <a name="Time.Kitchen"></a>
-### func \(Time\) [Kitchen](<https://github.com/agentstation/utc/blob/master/utc.go#L545>)
+### func \(Time\) [Kitchen](<https://github.com/agentstation/utc/blob/main/utc.go#L555>)
 
 ```go
 func (t Time) Kitchen() string
@@ -691,7 +693,7 @@ func (t Time) Kitchen() string
 Kitchen formats time as "3:04PM"
 
 <a name="Time.MST"></a>
-### func \(Time\) [MST](<https://github.com/agentstation/utc/blob/master/utc.go#L356>)
+### func \(Time\) [MST](<https://github.com/agentstation/utc/blob/main/utc.go#L366>)
 
 ```go
 func (t Time) MST() time.Time
@@ -700,7 +702,7 @@ func (t Time) MST() time.Time
 MST returns t in MST
 
 <a name="Time.MarshalJSON"></a>
-### func \(\*Time\) [MarshalJSON](<https://github.com/agentstation/utc/blob/master/utc.go#L186>)
+### func \(\*Time\) [MarshalJSON](<https://github.com/agentstation/utc/blob/main/utc.go#L196>)
 
 ```go
 func (t *Time) MarshalJSON() ([]byte, error)
@@ -709,7 +711,7 @@ func (t *Time) MarshalJSON() ([]byte, error)
 MarshalJSON implements the json.Marshaler interface for utc.Time. Returns an error for nil receivers to maintain consistency with standard marshaling behavior.
 
 <a name="Time.MarshalText"></a>
-### func \(Time\) [MarshalText](<https://github.com/agentstation/utc/blob/master/utc.go#L201>)
+### func \(Time\) [MarshalText](<https://github.com/agentstation/utc/blob/main/utc.go#L212>)
 
 ```go
 func (t Time) MarshalText() ([]byte, error)
@@ -718,7 +720,7 @@ func (t Time) MarshalText() ([]byte, error)
 MarshalText implements encoding.TextMarshaler.
 
 <a name="Time.MarshalYAML"></a>
-### func \(Time\) [MarshalYAML](<https://github.com/agentstation/utc/blob/master/utc.go#L243>)
+### func \(Time\) [MarshalYAML](<https://github.com/agentstation/utc/blob/main/utc.go#L263>)
 
 ```go
 func (t Time) MarshalYAML() (any, error)
@@ -727,7 +729,7 @@ func (t Time) MarshalYAML() (any, error)
 MarshalYAML implements the yaml.Marshaler interface for utc.Time
 
 <a name="Time.MonthLong"></a>
-### func \(Time\) [MonthLong](<https://github.com/agentstation/utc/blob/master/utc.go#L525>)
+### func \(Time\) [MonthLong](<https://github.com/agentstation/utc/blob/main/utc.go#L535>)
 
 ```go
 func (t Time) MonthLong() string
@@ -736,7 +738,7 @@ func (t Time) MonthLong() string
 MonthLong formats time as "January"
 
 <a name="Time.MonthShort"></a>
-### func \(Time\) [MonthShort](<https://github.com/agentstation/utc/blob/master/utc.go#L530>)
+### func \(Time\) [MonthShort](<https://github.com/agentstation/utc/blob/main/utc.go#L540>)
 
 ```go
 func (t Time) MonthShort() string
@@ -745,7 +747,7 @@ func (t Time) MonthShort() string
 MonthShort formats time as "Jan"
 
 <a name="Time.Mountain"></a>
-### func \(Time\) [Mountain](<https://github.com/agentstation/utc/blob/master/utc.go#L385>)
+### func \(Time\) [Mountain](<https://github.com/agentstation/utc/blob/main/utc.go#L395>)
 
 ```go
 func (t Time) Mountain() time.Time
@@ -754,7 +756,7 @@ func (t Time) Mountain() time.Time
 Mountain returns t in Mountain time \(handles MST/MDT automatically\)
 
 <a name="Time.PST"></a>
-### func \(Time\) [PST](<https://github.com/agentstation/utc/blob/master/utc.go#L341>)
+### func \(Time\) [PST](<https://github.com/agentstation/utc/blob/main/utc.go#L351>)
 
 ```go
 func (t Time) PST() time.Time
@@ -763,7 +765,7 @@ func (t Time) PST() time.Time
 PST returns t in PST
 
 <a name="Time.Pacific"></a>
-### func \(Time\) [Pacific](<https://github.com/agentstation/utc/blob/master/utc.go#L361>)
+### func \(Time\) [Pacific](<https://github.com/agentstation/utc/blob/main/utc.go#L371>)
 
 ```go
 func (t Time) Pacific() time.Time
@@ -772,7 +774,7 @@ func (t Time) Pacific() time.Time
 Pacific returns t in Pacific time \(handles PST/PDT automatically\)
 
 <a name="Time.RFC3339"></a>
-### func \(Time\) [RFC3339](<https://github.com/agentstation/utc/blob/master/utc.go#L411>)
+### func \(Time\) [RFC3339](<https://github.com/agentstation/utc/blob/main/utc.go#L421>)
 
 ```go
 func (t Time) RFC3339() string
@@ -781,7 +783,7 @@ func (t Time) RFC3339() string
 RFC3339 formats time as "2006\-01\-02T15:04:05Z07:00"
 
 <a name="Time.RFC3339Nano"></a>
-### func \(Time\) [RFC3339Nano](<https://github.com/agentstation/utc/blob/master/utc.go#L416>)
+### func \(Time\) [RFC3339Nano](<https://github.com/agentstation/utc/blob/main/utc.go#L426>)
 
 ```go
 func (t Time) RFC3339Nano() string
@@ -790,7 +792,7 @@ func (t Time) RFC3339Nano() string
 RFC3339Nano formats time as "2006\-01\-02T15:04:05.999999999Z07:00"
 
 <a name="Time.RFC822"></a>
-### func \(Time\) [RFC822](<https://github.com/agentstation/utc/blob/master/utc.go#L426>)
+### func \(Time\) [RFC822](<https://github.com/agentstation/utc/blob/main/utc.go#L436>)
 
 ```go
 func (t Time) RFC822() string
@@ -799,7 +801,7 @@ func (t Time) RFC822() string
 RFC822 formats time as "02 Jan 06 15:04 MST"
 
 <a name="Time.RFC822Z"></a>
-### func \(Time\) [RFC822Z](<https://github.com/agentstation/utc/blob/master/utc.go#L431>)
+### func \(Time\) [RFC822Z](<https://github.com/agentstation/utc/blob/main/utc.go#L441>)
 
 ```go
 func (t Time) RFC822Z() string
@@ -808,7 +810,7 @@ func (t Time) RFC822Z() string
 RFC822Z formats time as "02 Jan 06 15:04 \-0700"
 
 <a name="Time.RFC850"></a>
-### func \(Time\) [RFC850](<https://github.com/agentstation/utc/blob/master/utc.go#L436>)
+### func \(Time\) [RFC850](<https://github.com/agentstation/utc/blob/main/utc.go#L446>)
 
 ```go
 func (t Time) RFC850() string
@@ -817,7 +819,7 @@ func (t Time) RFC850() string
 RFC850 formats time as "Monday, 02\-Jan\-06 15:04:05 MST"
 
 <a name="Time.Scan"></a>
-### func \(\*Time\) [Scan](<https://github.com/agentstation/utc/blob/master/utc.go#L282>)
+### func \(\*Time\) [Scan](<https://github.com/agentstation/utc/blob/main/utc.go#L287>)
 
 ```go
 func (t *Time) Scan(value any) error
@@ -826,7 +828,7 @@ func (t *Time) Scan(value any) error
 Scan implements the sql.Scanner interface for database operations for utc.Time It does this by scanning the value into a time.Time, converting the time.Time to UTC, and then assigning the UTC time to the utc.Time.
 
 <a name="Time.StartOfDay"></a>
-### func \(Time\) [StartOfDay](<https://github.com/agentstation/utc/blob/master/utc.go#L572>)
+### func \(Time\) [StartOfDay](<https://github.com/agentstation/utc/blob/main/utc.go#L585>)
 
 ```go
 func (t Time) StartOfDay() Time
@@ -835,18 +837,16 @@ func (t Time) StartOfDay() Time
 Day helpers \- times are always in UTC within this package
 
 <a name="Time.String"></a>
-### func \(\*Time\) [String](<https://github.com/agentstation/utc/blob/master/utc.go#L257>)
+### func \(Time\) [String](<https://github.com/agentstation/utc/blob/main/utc.go#L273>)
 
 ```go
-func (t *Time) String() string
+func (t Time) String() string
 ```
 
-String implements the Stringer interface for utc.Time. It prints the time in RFC3339 format.
-
-Unlike many Go types that panic on nil receivers, this method returns "\<nil\>" to match stdlib conventions \(e.g., bytes.Buffer\) and improve production safety. In debug builds \(compiled with \-tags debug\), nil receivers are logged to help identify potential bugs.
+String implements fmt.Stringer. It prints the time in RFC3339Nano format.
 
 <a name="Time.Sub"></a>
-### func \(Time\) [Sub](<https://github.com/agentstation/utc/blob/master/utc.go#L331>)
+### func \(Time\) [Sub](<https://github.com/agentstation/utc/blob/main/utc.go#L341>)
 
 ```go
 func (t Time) Sub(u Time) time.Duration
@@ -854,8 +854,17 @@ func (t Time) Sub(u Time) time.Duration
 
 Sub returns the duration t\-u
 
+<a name="Time.Time"></a>
+### func \(Time\) [Time](<https://github.com/agentstation/utc/blob/main/utc.go#L123>)
+
+```go
+func (t Time) Time() time.Time
+```
+
+Time returns the underlying time.Time normalized to UTC.
+
 <a name="Time.TimeFormat"></a>
-### func \(Time\) [TimeFormat](<https://github.com/agentstation/utc/blob/master/utc.go#L403>)
+### func \(Time\) [TimeFormat](<https://github.com/agentstation/utc/blob/main/utc.go#L413>)
 
 ```go
 func (t Time) TimeFormat(layout TimeLayout) string
@@ -864,7 +873,7 @@ func (t Time) TimeFormat(layout TimeLayout) string
 TimeFormat formats the time using the specified layout
 
 <a name="Time.TimeOnly"></a>
-### func \(Time\) [TimeOnly](<https://github.com/agentstation/utc/blob/master/utc.go#L540>)
+### func \(Time\) [TimeOnly](<https://github.com/agentstation/utc/blob/main/utc.go#L550>)
 
 ```go
 func (t Time) TimeOnly() string
@@ -873,7 +882,7 @@ func (t Time) TimeOnly() string
 TimeOnly formats time as "15:04:05"
 
 <a name="Time.USDateLong"></a>
-### func \(Time\) [USDateLong](<https://github.com/agentstation/utc/blob/master/utc.go#L454>)
+### func \(Time\) [USDateLong](<https://github.com/agentstation/utc/blob/main/utc.go#L464>)
 
 ```go
 func (t Time) USDateLong() string
@@ -882,7 +891,7 @@ func (t Time) USDateLong() string
 USDateLong formats time as "January 2, 2006"
 
 <a name="Time.USDateShort"></a>
-### func \(Time\) [USDateShort](<https://github.com/agentstation/utc/blob/master/utc.go#L449>)
+### func \(Time\) [USDateShort](<https://github.com/agentstation/utc/blob/main/utc.go#L459>)
 
 ```go
 func (t Time) USDateShort() string
@@ -891,7 +900,7 @@ func (t Time) USDateShort() string
 USDateShort formats time as "01/02/2006"
 
 <a name="Time.USDateTime12"></a>
-### func \(Time\) [USDateTime12](<https://github.com/agentstation/utc/blob/master/utc.go#L459>)
+### func \(Time\) [USDateTime12](<https://github.com/agentstation/utc/blob/main/utc.go#L469>)
 
 ```go
 func (t Time) USDateTime12() string
@@ -900,7 +909,7 @@ func (t Time) USDateTime12() string
 USDateTime12 formats time as "01/02/2006 03:04:05 PM"
 
 <a name="Time.USDateTime24"></a>
-### func \(Time\) [USDateTime24](<https://github.com/agentstation/utc/blob/master/utc.go#L464>)
+### func \(Time\) [USDateTime24](<https://github.com/agentstation/utc/blob/main/utc.go#L474>)
 
 ```go
 func (t Time) USDateTime24() string
@@ -909,7 +918,7 @@ func (t Time) USDateTime24() string
 USDateTime24 formats time as "01/02/2006 15:04:05"
 
 <a name="Time.USTime12"></a>
-### func \(Time\) [USTime12](<https://github.com/agentstation/utc/blob/master/utc.go#L469>)
+### func \(Time\) [USTime12](<https://github.com/agentstation/utc/blob/main/utc.go#L479>)
 
 ```go
 func (t Time) USTime12() string
@@ -918,7 +927,7 @@ func (t Time) USTime12() string
 USTime12 formats time as "3:04 PM"
 
 <a name="Time.USTime24"></a>
-### func \(Time\) [USTime24](<https://github.com/agentstation/utc/blob/master/utc.go#L474>)
+### func \(Time\) [USTime24](<https://github.com/agentstation/utc/blob/main/utc.go#L484>)
 
 ```go
 func (t Time) USTime24() string
@@ -927,7 +936,7 @@ func (t Time) USTime24() string
 USTime24 formats time as "15:04"
 
 <a name="Time.UTC"></a>
-### func \(Time\) [UTC](<https://github.com/agentstation/utc/blob/master/utc.go#L336>)
+### func \(Time\) [UTC](<https://github.com/agentstation/utc/blob/main/utc.go#L346>)
 
 ```go
 func (t Time) UTC() time.Time
@@ -936,7 +945,7 @@ func (t Time) UTC() time.Time
 UTC returns t in UTC
 
 <a name="Time.Unix"></a>
-### func \(Time\) [Unix](<https://github.com/agentstation/utc/blob/master/utc.go#L568>)
+### func \(Time\) [Unix](<https://github.com/agentstation/utc/blob/main/utc.go#L581>)
 
 ```go
 func (t Time) Unix() int64
@@ -945,7 +954,7 @@ func (t Time) Unix() int64
 
 
 <a name="Time.UnixMilli"></a>
-### func \(Time\) [UnixMilli](<https://github.com/agentstation/utc/blob/master/utc.go#L569>)
+### func \(Time\) [UnixMilli](<https://github.com/agentstation/utc/blob/main/utc.go#L582>)
 
 ```go
 func (t Time) UnixMilli() int64
@@ -954,7 +963,7 @@ func (t Time) UnixMilli() int64
 
 
 <a name="Time.UnmarshalJSON"></a>
-### func \(\*Time\) [UnmarshalJSON](<https://github.com/agentstation/utc/blob/master/utc.go#L156>)
+### func \(\*Time\) [UnmarshalJSON](<https://github.com/agentstation/utc/blob/main/utc.go#L155>)
 
 ```go
 func (t *Time) UnmarshalJSON(data []byte) error
@@ -963,7 +972,7 @@ func (t *Time) UnmarshalJSON(data []byte) error
 UnmarshalJSON implements the json.Unmarshaler interface for utc.Time
 
 <a name="Time.UnmarshalText"></a>
-### func \(\*Time\) [UnmarshalText](<https://github.com/agentstation/utc/blob/master/utc.go#L206>)
+### func \(\*Time\) [UnmarshalText](<https://github.com/agentstation/utc/blob/main/utc.go#L217>)
 
 ```go
 func (t *Time) UnmarshalText(text []byte) error
@@ -972,7 +981,7 @@ func (t *Time) UnmarshalText(text []byte) error
 UnmarshalText implements encoding.TextUnmarshaler.
 
 <a name="Time.UnmarshalYAML"></a>
-### func \(\*Time\) [UnmarshalYAML](<https://github.com/agentstation/utc/blob/master/utc.go#L220>)
+### func \(\*Time\) [UnmarshalYAML](<https://github.com/agentstation/utc/blob/main/utc.go#L235>)
 
 ```go
 func (t *Time) UnmarshalYAML(unmarshal func(any) error) error
@@ -981,18 +990,16 @@ func (t *Time) UnmarshalYAML(unmarshal func(any) error) error
 UnmarshalYAML implements the yaml.Unmarshaler interface for utc.Time
 
 <a name="Time.Value"></a>
-### func \(\*Time\) [Value](<https://github.com/agentstation/utc/blob/master/utc.go#L270>)
+### func \(Time\) [Value](<https://github.com/agentstation/utc/blob/main/utc.go#L279>)
 
 ```go
-func (t *Time) Value() (driver.Value, error)
+func (t Time) Value() (driver.Value, error)
 ```
 
-Value implements the driver.Valuer interface for database operations for utc.Time. It returns the time.Time value and assumes the time is already in UTC.
-
-Returns an error if called on a nil receiver instead of panicking to allow graceful error handling in database operations. In debug builds, nil receivers are logged.
+Value implements the driver.Valuer interface for database operations for utc.Time. It returns the UTC time.Time value.
 
 <a name="Time.WeekdayLong"></a>
-### func \(Time\) [WeekdayLong](<https://github.com/agentstation/utc/blob/master/utc.go#L515>)
+### func \(Time\) [WeekdayLong](<https://github.com/agentstation/utc/blob/main/utc.go#L525>)
 
 ```go
 func (t Time) WeekdayLong() string
@@ -1001,7 +1008,7 @@ func (t Time) WeekdayLong() string
 WeekdayLong formats time as "Monday"
 
 <a name="Time.WeekdayShort"></a>
-### func \(Time\) [WeekdayShort](<https://github.com/agentstation/utc/blob/master/utc.go#L520>)
+### func \(Time\) [WeekdayShort](<https://github.com/agentstation/utc/blob/main/utc.go#L530>)
 
 ```go
 func (t Time) WeekdayShort() string
@@ -1010,7 +1017,7 @@ func (t Time) WeekdayShort() string
 WeekdayShort formats time as "Mon"
 
 <a name="TimeLayout"></a>
-## type [TimeLayout](<https://github.com/agentstation/utc/blob/master/utc.go#L31>)
+## type [TimeLayout](<https://github.com/agentstation/utc/blob/main/utc.go#L34>)
 
 
 

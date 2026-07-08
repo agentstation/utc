@@ -21,9 +21,10 @@ func TestDebugLogging(t *testing.T) {
 	var nilTime *Time
 
 	// These should log to stderr in debug mode
-	_ = nilTime.String()
-	_, _ = nilTime.Value()
 	_, _ = nilTime.MarshalJSON()
+	_ = nilTime.UnmarshalJSON([]byte(`"2024-01-02T15:04:05Z"`))
+	_ = nilTime.UnmarshalText([]byte("2024-01-02T15:04:05Z"))
+	_ = nilTime.Scan("2024-01-02T15:04:05Z")
 
 	// Restore stderr and read output
 	w.Close()
@@ -35,9 +36,10 @@ func TestDebugLogging(t *testing.T) {
 
 	// Verify debug logs were written
 	expectedLogs := []string{
-		"String() called on nil *Time receiver",
-		"Value() called on nil *Time receiver",
 		"MarshalJSON() called on nil *Time receiver",
+		"UnmarshalJSON() called on nil *Time receiver",
+		"UnmarshalText() called on nil *Time receiver",
+		"Scan() called on nil *Time receiver",
 	}
 
 	for _, expected := range expectedLogs {
