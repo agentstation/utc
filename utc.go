@@ -1,10 +1,11 @@
 // Package utc provides a small time.Time wrapper that stores instants in UTC.
 //
 // The package keeps the underlying time.Time value unexported, normalizes values
-// through constructors, parsers, scanners, and serializers, and exposes UTC
-// time.Time values through Time and UTC. When compiled with the debug build tag
-// (-tags debug), pointer-based methods log nil receiver calls before returning
-// errors where Go permits that behavior.
+// through constructors, parsers, scanners, and serializers, and exposes
+// standard time.Time values through the Time and UTC methods and the UTC
+// interface. When compiled with the debug build tag (-tags debug),
+// pointer-based methods log nil receiver calls before returning errors where
+// Go permits that behavior.
 //
 // Key features:
 //   - Constructors and parsers normalize values to UTC
@@ -24,16 +25,16 @@ package utc
 import (
 	"bytes"
 	"database/sql/driver"
-	"encoding"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 )
 
+// TimeLayout names one of the package's built-in formatting layouts.
 type TimeLayout string
 
-// Add layout constants at package level
+// Built-in formatting layouts.
 const (
 	TimeLayoutUSDateShort  TimeLayout = "01/02/2006"
 	TimeLayoutUSDateLong   TimeLayout = "January 2, 2006"
@@ -91,8 +92,8 @@ func initLocations() error {
 	return nil
 }
 
-// ValidateTimezoneAvailability checks if all timezone locations were properly initialized
-// Returns nil if initialization was successful, otherwise returns the initialization error
+// ValidateTimezoneAvailability checks whether package timezone locations were initialized.
+// It returns nil if initialization succeeded.
 func ValidateTimezoneAvailability() error {
 	if locationError != nil {
 		return fmt.Errorf("timezone locations not properly initialized: %w", locationError)
@@ -105,14 +106,25 @@ type Time struct {
 	t time.Time
 }
 
-// Now returns the current time in UTC
+// UTC is implemented by values that can expose themselves as a UTC time.Time.
+// It is an interface, not a timezone value. Both time.Time and utc.Time satisfy it.
+type UTC interface {
+	UTC() time.Time
+}
+
+// Now returns the current time in UTC.
 func Now() Time {
 	return New(time.Now())
 }
 
-// New returns a new Time from a time.Time
+// New returns a new Time from a time.Time.
 func New(t time.Time) Time {
 	return Time{t: t.UTC()}
+}
+
+// From returns a new Time from any value that exposes a UTC time.Time.
+func From(t UTC) Time {
+	return New(t.UTC())
 }
 
 func (t Time) utc() time.Time {
@@ -124,7 +136,7 @@ func (t Time) Time() time.Time {
 	return t.utc()
 }
 
-// ParseRFC3339 parses a time string in RFC3339 format and returns a utc.Time
+// ParseRFC3339 parses a time string in RFC3339 format and returns a Time.
 func ParseRFC3339(s string) (Time, error) {
 	t, err := time.Parse(time.RFC3339, s)
 	if err != nil {
@@ -133,7 +145,7 @@ func ParseRFC3339(s string) (Time, error) {
 	return New(t), nil
 }
 
-// ParseRFC3339Nano parses a time string in RFC3339Nano format and returns a utc.Time
+// ParseRFC3339Nano parses a time string in RFC3339Nano format and returns a Time.
 func ParseRFC3339Nano(s string) (Time, error) {
 	t, err := time.Parse(time.RFC3339Nano, s)
 	if err != nil {
@@ -142,7 +154,7 @@ func ParseRFC3339Nano(s string) (Time, error) {
 	return New(t), nil
 }
 
-// Parse parses a time string in the specified format and returns a utc.Time
+// Parse parses a time string in the specified format and returns a Time.
 func Parse(layout string, s string) (Time, error) {
 	t, err := time.Parse(layout, s)
 	if err != nil {
@@ -151,7 +163,7 @@ func Parse(layout string, s string) (Time, error) {
 	return New(t), nil
 }
 
-// UnmarshalJSON implements the json.Unmarshaler interface for utc.Time
+// UnmarshalJSON implements the json.Unmarshaler interface for Time.
 func (t *Time) UnmarshalJSON(data []byte) error {
 	if t == nil {
 		debugLog("UnmarshalJSON() called on nil *Time receiver")
@@ -191,7 +203,7 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// MarshalJSON implements the json.Marshaler interface for utc.Time.
+// MarshalJSON implements the json.Marshaler interface for Time.
 // Returns an error for nil receivers to maintain consistency with standard marshaling behavior.
 func (t *Time) MarshalJSON() ([]byte, error) {
 	if t == nil {
@@ -200,13 +212,6 @@ func (t *Time) MarshalJSON() ([]byte, error) {
 	}
 	return t.utc().MarshalJSON()
 }
-
-// Ensure Time implements encoding.TextMarshaler/TextUnmarshaler for broader codec support.
-var (
-	_ encoding.TextMarshaler   = Time{}
-	_ encoding.TextUnmarshaler = (*Time)(nil)
-	_ driver.Valuer            = Time{}
-)
 
 // MarshalText implements encoding.TextMarshaler.
 func (t Time) MarshalText() ([]byte, error) {
@@ -231,7 +236,7 @@ func (t *Time) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// UnmarshalYAML implements the yaml.Unmarshaler interface for utc.Time
+// UnmarshalYAML implements the yaml.Unmarshaler interface for Time.
 func (t *Time) UnmarshalYAML(unmarshal func(any) error) error {
 	if t == nil {
 		debugLog("UnmarshalYAML() called on nil *Time receiver")
@@ -259,7 +264,7 @@ func (t *Time) UnmarshalYAML(unmarshal func(any) error) error {
 	return nil
 }
 
-// MarshalYAML implements the yaml.Marshaler interface for utc.Time
+// MarshalYAML implements the yaml.Marshaler interface for Time.
 func (t Time) MarshalYAML() (any, error) {
 	if t.utc().IsZero() {
 		return nil, nil
@@ -274,16 +279,15 @@ func (t Time) String() string {
 	return t.utc().Format(time.RFC3339Nano)
 }
 
-// Value implements the driver.Valuer interface for database operations for utc.Time.
-// It returns the UTC time.Time value.
+// Value implements driver.Valuer for database operations.
+// It returns the UTC time.Time value as a driver.Value.
 func (t Time) Value() (driver.Value, error) {
 	// Preserve previous behavior: zero value still returns a non-nil time
 	return t.utc(), nil
 }
 
-// Scan implements the sql.Scanner interface for database operations for utc.Time
-// It does this by scanning the value into a time.Time, converting the time.Time to UTC,
-// and then assigning the UTC time to the utc.Time.
+// Scan implements sql.Scanner for database operations.
+// It accepts time.Time, string, and []byte values and stores them in UTC.
 func (t *Time) Scan(value any) error {
 	if t == nil {
 		debugLog("Scan() called on nil *Time receiver")

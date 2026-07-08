@@ -360,6 +360,21 @@ func TestUTC_New(t *testing.T) {
 		})
 	}
 }
+
+func TestUTC_FromAcceptsTimeAndUTCTime(t *testing.T) {
+	est := time.Date(2024, 1, 2, 3, 4, 5, 123456789, time.FixedZone("EST", -5*3600))
+	want := time.Date(2024, 1, 2, 8, 4, 5, 123456789, time.UTC)
+
+	fromTime := From(est)
+	if !fromTime.UTC().Equal(want) {
+		t.Fatalf("From(time.Time) = %v, want %v", fromTime.UTC(), want)
+	}
+
+	fromUTC := From(fromTime)
+	if !fromUTC.Equal(fromTime) {
+		t.Fatalf("From(utc.Time) = %v, want %v", fromUTC, fromTime)
+	}
+}
 func TestUTC_TimeZoneConversions(t *testing.T) {
 	// Use a fixed time that won't be affected by DST
 	ut := Time{time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)} // Noon UTC
