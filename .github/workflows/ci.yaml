@@ -103,5 +103,5 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7
         with:
-          file: ./coverage-yaml.txt
+          files: ./coverage-yaml.txt
           token: ${{ secrets.CODECOV_TOKEN }}
