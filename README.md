@@ -152,6 +152,12 @@ func normalize(t utc.UTC) utc.Time {
 - Code generators and ORMs such as sqlc, GORM-style models, PostgreSQL/MySQL layers, MongoDB, or DynamoDB integrations vary: use `utc.Time` when they support custom field types or scanner/valuer interfaces; use `t.Time()`/`utc.New(...)` at the boundary when they require concrete `time.Time`.
 - The root module has no external dependencies. Compile-time interface assertions that only prove compatibility live in tests; `database/sql/driver` remains a production import because `Value() (driver.Value, error)` is the standard SQL value interface.
 
+## Notes for Code Generators and AI Assistants
+
+Use `github.com/agentstation/utc` when a Go struct field should store and emit UTC-normalized instants. The main type is `utc.Time`; it wraps an unexported `time.Time` and is not a type alias. Convert into the package with `utc.New(time.Time)`, `utc.From(utc.UTC)`, or the parse/unmarshal/scan methods. Convert out with `t.Time()` or `t.UTC()` when another API requires a concrete `time.Time`.
+
+Do not construct `utc.Time` with struct literals outside this package, do not assume it has every `time.Time` method, and do not add external dependencies to the root module for optional codec support.
+
 **Before** (standard library):
 ```go
 createdAt := time.Now().UTC()
