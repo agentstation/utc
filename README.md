@@ -55,7 +55,7 @@ go get github.com/agentstation/utc
 
 **YAML Usage**: The package implements YAML marshal/unmarshal interface methods. To encode or decode YAML in an application, install the YAML library you already use:
 ```bash
-go get github.com/goccy/go-yaml@v1.10.1
+go get github.com/goccy/go-yaml
 ```
 
 ## Why Choose UTC?
@@ -266,7 +266,7 @@ go test -tags yaml ./...
 make test-yaml
 ```
 
-**Note**: Actual YAML file parsing/emission requires a YAML package in your application. `utc` only provides the methods those packages call. The example above matches the Go 1.18-compatible version used by the integration test; newer YAML library releases may require newer Go versions. The real codec integration test lives in `integration/yaml` so the root module remains dependency-free.
+**Note**: Actual YAML file parsing/emission requires a YAML package in your application. `utc` only provides the methods those packages call. Choose a YAML library version compatible with your application's Go version. The real codec integration test lives in `integration/yaml` and currently uses `github.com/goccy/go-yaml` with Go 1.21+, so the root module remains dependency-free and Go 1.18-compatible.
 
 ## Testing
 
